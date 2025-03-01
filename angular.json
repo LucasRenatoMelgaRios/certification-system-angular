@@ -11,6 +11,7 @@
       "prefix": "app",
       "architect": {
         "build": {
+          
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/certification-module-angular",
@@ -26,9 +27,12 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ],
+"styles": [
+  "src/styles.css",
+  "node_modules/filepond/dist/filepond.min.css",
+  "node_modules/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css"
+],
+
             "scripts": []
           },
           "configurations": {

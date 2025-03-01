@@ -1,0 +1,228 @@
+<div class="cert-module">
+  <div class="cert-header">
+    <h2>PLANTILLAS DE CERTIFICADOS GUARDADOS</h2>
+    <div class="cert-selection">
+      <div 
+        *ngFor="let cert of certTemplates" 
+        class="cert-template" 
+        [class.active]="selectedCert?.id === cert.id" 
+        (click)="selectTemplate(cert)"
+      >
+        <div class="cert-template-preview">
+          <img [src]="cert.imageUrl" [alt]="cert.name" />
+        </div>
+        <span>{{ cert.name }}</span>
+        <button 
+          class="delete-template-button" 
+          (click)="$event.stopPropagation(); handleDeleteTemplate(cert.id)"
+        >
+          ❌
+        </button>
+      </div>
+      <button 
+        class="add-template-button"
+        (click)="showAddTemplate = !showAddTemplate"
+      >
+      <lucide-icon name="circle-plus"></lucide-icon>
+    </button>
+    </div>
+    
+    <div class="add-template-form" *ngIf="showAddTemplate">
+      <div class="template-upload-section">
+        <label>Imagen de plantilla</label>
+        <div class="template-upload">
+          <file-pond 
+          #templatePond
+          [options]="templateUploadOptions" 
+          (onupdatefiles)="handleTemplateImageUpload($event)">
+        </file-pond>
+        </div>
+      </div>
+      <div class="template-name-section">
+        <label>Nombre de la plantilla</label>
+        <input
+          type="text"
+          placeholder="Nombre de la nueva plantilla"
+          [(ngModel)]="newTemplateName"
+        />
+      </div>
+      <button 
+        (click)="handleAddTemplate()"
+        [disabled]="!newTemplateName.trim() || !newTemplateImage"
+      >
+        Guardar plantilla
+      </button>
+    </div>
+  </div>
+
+  <div class="cert-content">
+    <div class="form-section">
+      <h3>FORMULARIO</h3>
+      <div class="form-group">
+        <label>Nombre</label>
+        <input 
+          type="text" 
+          name="nombre" 
+          [(ngModel)]="formData.nombre"
+        />
+      </div>
+      
+      <div class="form-group">
+        <label>Apellido</label>
+        <input 
+          type="text" 
+          name="apellido" 
+          [(ngModel)]="formData.apellido"
+        />
+      </div>
+      
+      <div class="form-group">
+        <label>Curso</label>
+        <input 
+          type="text" 
+          name="curso" 
+          [(ngModel)]="formData.curso"
+        />
+      </div>
+      
+      <div class="form-group">
+        <label>Subir firma</label>
+        <div class="signature-upload">
+          <file-pond
+            #signaturePond
+            [options]="signatureUploadOptions"
+            (onupdatefiles)="handleFileUpload($event)"
+          ></file-pond>
+        </div>
+      </div>
+      
+      <button 
+        class="generate-button"
+        (click)="handleGenerateItems()"
+      >
+        Generar items
+      </button>
+
+      <div class="drop-zones-control">
+        <h4>Zonas de colocación</h4>
+        <div class="drop-zones-list">
+          <div *ngFor="let zone of dropZones" class="drop-zone-item">
+            <span>{{ zone.label }}</span>
+            <div class="drop-zone-actions">
+              <button (click)="handleRemoveDropZone(zone.id)">
+                <lucide-icon name="trash-2"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="isAddingDropZone" class="add-drop-zone-form">
+          <input
+            type="text"
+            placeholder="Nombre de la zona"
+            [(ngModel)]="newDropZoneLabel"
+          />
+          <div class="drop-zone-form-actions">
+            <button (click)="handleAddDropZone()">Agregar</button>
+            <button (click)="isAddingDropZone = false">Cancelar</button>
+          </div>
+        </div>
+        
+        <button 
+          *ngIf="!isAddingDropZone"
+          class="add-drop-zone-button"
+          (click)="isAddingDropZone = true"
+        >
+        <lucide-icon name="circle-plus"></lucide-icon>
+        Agregar zona
+        </button>
+        
+        <div class="drag-instructions">
+          <p>Haz clic en una zona y usa las flechas del teclado para moverla</p>
+          <p>Mantén presionado Shift + flechas para movimientos más grandes</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="certificate-preview" #certificateContainerRef>
+      <h3>CERTIFICADO</h3>
+      <div 
+        class="certificate-content" 
+        [style.width.px]="certSize.width"
+        [style.height.px]="certSize.height"
+      >
+        <div 
+          class="certificate-background" 
+          #certificateRef
+          [style.backgroundImage]="'url(' + (selectedCert?.imageUrl || '') + ')'"
+          [style.width.px]="certSize.width"
+          [style.height.px]="certSize.height"
+        ></div>
+        
+        <div 
+          *ngFor="let zone of dropZones" 
+          class="drop-zone"
+          [class.selected]="selectedElement && selectedElement.type === 'dropZone' && selectedElement.id === zone.id"
+          [class.drop-zone-active]="isDraggedOver(zone.label)"
+          [style.left.px]="zone.position.x"
+          [style.top.px]="zone.position.y"
+          (mousedown)="startDraggingZone($event, zone)"
+          (click)="handleSelectElement('dropZone', zone.id)"
+        >
+          <ng-container *ngIf="isItemDroppedInZone(zone.label); else placeholder">
+            <img 
+              *ngIf="getDropZoneContent(zone.label) === 'signature' && signature" 
+              [src]="signature.dataURL" 
+              alt="Firma" 
+              class="signature-preview" 
+            />
+            <span *ngIf="getDropZoneContent(zone.label) !== 'signature'">
+              {{ getDropZoneContent(zone.label) }}
+            </span>
+          </ng-container>
+          <ng-template #placeholder>
+            <span class="drop-placeholder">{{ zone.label }}</span>
+          </ng-template>
+          
+          <div class="drop-zone-controls">
+            <button class="control-button delete" (click)="$event.stopPropagation(); handleRemoveDropZone(zone.id)">
+              <lucide-icon name="trash-2"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="items-section">
+      <h3>ITEMS GENERADOS</h3>
+      <div class="items-container">
+        <div 
+          *ngFor="let item of generatedItems" 
+          class="draggable-item"
+          [class.selected]="selectedElement && selectedElement.type === 'item' && selectedElement.id === item.id"
+          [class.dragging]="draggingItem?.id === item.id"
+          (mousedown)="startDraggingItem($event, item)"
+          (click)="handleSelectElement('item', item.id)"
+          [style.fontSize.px]="20"
+          [style.fontWeight]="'bold'"
+          tabindex="0"
+        >
+          {{ item.text }}
+        </div>
+        <p *ngIf="generatedItems.length === 0" class="no-items">
+          Genera items para arrastrar al certificado
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="cert-footer">
+    <button 
+      class="export-button" 
+      (click)="handleExportPDF()"
+      [disabled]="!hasDroppedItems()"
+    >
+      Exportar PDF
+    </button>
+  </div>
+</div>
