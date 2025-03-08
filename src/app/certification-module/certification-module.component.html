@@ -23,8 +23,8 @@
         class="add-template-button"
         (click)="showAddTemplate = !showAddTemplate"
       >
-      <lucide-icon name="circle-plus"></lucide-icon>
-    </button>
+        <lucide-icon name="circle-plus"></lucide-icon>
+      </button>
     </div>
     
     <div class="add-template-form" *ngIf="showAddTemplate">
@@ -32,10 +32,10 @@
         <label>Imagen de plantilla</label>
         <div class="template-upload">
           <file-pond 
-          #templatePond
-          [options]="templateUploadOptions" 
-          (onupdatefiles)="handleTemplateImageUpload($event)">
-        </file-pond>
+            #templatePond
+            [options]="templateUploadOptions" 
+            (onupdatefiles)="handleTemplateImageUpload($event)">
+          </file-pond>
         </div>
       </div>
       <div class="template-name-section">
@@ -56,37 +56,32 @@
   </div>
 
   <div class="cert-content">
-    <div class="form-section">
-      <h3>FORMULARIO</h3>
-      <div class="form-group">
-        <label>Nombre</label>
-        <input 
-          type="text" 
-          name="nombre" 
-          [(ngModel)]="formData.nombre"
-        />
+    <div class="students-section">
+      <h3>LISTA DE ESTUDIANTES</h3>
+      <div class="students-list">
+        <div 
+          *ngFor="let certificado of certificados" 
+          class="student-item"
+          [class.selected]="selectedCertificado?.iIdCertificado === certificado.iIdCertificado"
+          (click)="selectStudent(certificado)"
+        >
+          <div class="student-header">
+            <h4>{{ certificado.nombre }} {{ certificado.apellido }}</h4>
+            <span class="student-status" [style.background]="certificado.background">
+              {{ certificado.estado }}
+            </span>
+          </div>
+          <div class="student-details">
+            <p><strong>Curso:</strong> {{ certificado.curso }}</p>
+            <p><strong>Fecha inicio:</strong> {{ certificado.initFormat }}</p>
+            <p><strong>Fecha fin:</strong> {{ certificado.finFormat }}</p>
+            <p><strong>Horas lectivas:</strong> {{ certificado.ihrlectiva }}</p>
+          </div>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label>Apellido</label>
-        <input 
-          type="text" 
-          name="apellido" 
-          [(ngModel)]="formData.apellido"
-        />
-      </div>
-      
-      <div class="form-group">
-        <label>Curso</label>
-        <input 
-          type="text" 
-          name="curso" 
-          [(ngModel)]="formData.curso"
-        />
-      </div>
-      
-      <div class="form-group">
-        <label>Subir firma</label>
+
+      <div class="signature-section">
+        <h4>Firma del certificado</h4>
         <div class="signature-upload">
           <file-pond
             #signaturePond
@@ -94,14 +89,14 @@
             (onupdatefiles)="handleFileUpload($event)"
           ></file-pond>
         </div>
+        <button 
+          class="generate-button"
+          (click)="handleGenerateItems()"
+          [disabled]="!selectedCertificado || !signature"
+        >
+          Generar items
+        </button>
       </div>
-      
-      <button 
-        class="generate-button"
-        (click)="handleGenerateItems()"
-      >
-        Generar items
-      </button>
 
       <div class="drop-zones-control">
         <h4>Zonas de colocación</h4>
@@ -133,8 +128,8 @@
           class="add-drop-zone-button"
           (click)="isAddingDropZone = true"
         >
-        <lucide-icon name="circle-plus"></lucide-icon>
-        Agregar zona
+          <lucide-icon name="circle-plus"></lucide-icon>
+          Agregar zona
         </button>
         
         <div class="drag-instructions">
@@ -210,7 +205,7 @@
           {{ item.text }}
         </div>
         <p *ngIf="generatedItems.length === 0" class="no-items">
-          Genera items para arrastrar al certificado
+          Selecciona un estudiante y genera los items para arrastrar al certificado
         </p>
       </div>
     </div>

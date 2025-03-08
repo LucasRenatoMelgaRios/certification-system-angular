@@ -589,3 +589,82 @@
   .delete-template-button:hover {
     color: darkred;
   }
+
+  /* Add these new styles to your existing CSS */
+.students-section {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.students-list {
+  margin-bottom: 20px;
+}
+
+.student-item {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.student-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.student-item.selected {
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.student-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.student-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.student-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.8rem;
+}
+
+.student-details {
+  font-size: 0.9rem;
+}
+
+.student-details p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.student-details strong {
+  color: #34495e;
+}
+
+.signature-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.signature-section h4 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}

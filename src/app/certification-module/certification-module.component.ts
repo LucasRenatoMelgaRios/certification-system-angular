@@ -13,7 +13,7 @@ import 'filepond/dist/filepond.min.css';
 
 import { 
   CertTemplate, 
-  FormData, 
+  Certificado,
   DropZone, 
   DroppedItem, 
   GeneratedItem, 
@@ -51,7 +51,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     { 
       id: 1, 
       name: "Certificado Básico",
-      imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3"
+      imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3" //aqui agregamos las plantillas iniciales, se pueden eliminar o agregar más
     },
     { 
       id: 2, 
@@ -60,9 +60,414 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   ];
 
+  // datos de los estudiantes
+  certificados: Certificado[] = [
+    {
+      "iIdCertificado": 56513,
+      "iIdDetalle": 79029,
+      "codigo": "COD0065-228710",
+      "descripcion": null,
+      "dateInit": "2024-12-05T17:00:00.000Z",
+      "dateFin": "2025-01-06T17:00:00.000Z",
+      "dateEmision": "2025-01-07T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 85,
+      "ihrlectiva": 120,
+      "curso": "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
+      "asesora": "Equipo 001 CENAPRO Cesy Alcedo",
+      "iIdPersona": 31,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "05/12/2024",
+      "finFormat": "06/01/2025",
+      "emisionFormat": "07/01/2025",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192697,
+      "nombre": "Jhonatan Alcides",
+      "apellido": "Solís Vilcarima",
+      "dni": "70095771",
+      "email": "jhonatansv40@gmail.com",
+      "telefono": "929432917",
+      "ciudad": "Ica",
+      "usuario": "70095771",
+      "clave": "solis70095771",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56512,
+      "iIdDetalle": 79195,
+      "codigo": "COD0020-186509",
+      "descripcion": null,
+      "dateInit": "2024-07-12T16:00:00.000Z",
+      "dateFin": "2024-09-13T16:00:00.000Z",
+      "dateEmision": "2024-09-14T16:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 0,
+      "ihrlectiva": 200,
+      "curso": "COD0020 - INNOVACIÓN TECNOLÓGICA EN GESTIÓN DOCUMENTAL Y BIBLIOTECAS",
+      "asesora": "Equipo 101 ENACAP Deysi Aranda",
+      "iIdPersona": 51,
+      "estado": "Certificado Realizado",
+      "initFormat": "12/07/2024",
+      "finFormat": "13/09/2024",
+      "emisionFormat": "14/09/2024",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 20,
+      "color": "#fff",
+      "background": "#007bff",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192756,
+      "nombre": "Katherin Liz",
+      "apellido": "Licla López",
+      "dni": "72266717",
+      "email": "katherin.liclalopez@gmail.com",
+      "telefono": "931904680",
+      "ciudad": "Ica",
+      "usuario": "72266717",
+      "clave": "liz72266717",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56510,
+      "iIdDetalle": 79194,
+      "codigo": "COD0741-643219",
+      "descripcion": null,
+      "dateInit": "2024-09-17T16:00:00.000Z",
+      "dateFin": "2024-11-16T17:00:00.000Z",
+      "dateEmision": "2024-11-18T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 0,
+      "ihrlectiva": 200,
+      "curso": "COD0741 - PSICOLOGÍA EDUCATIVA",
+      "asesora": "Equipo 101 ENACAP Deysi Aranda",
+      "iIdPersona": 51,
+      "estado": "Certificado Realizado",
+      "initFormat": "17/09/2024",
+      "finFormat": "16/11/2024",
+      "emisionFormat": "18/11/2024",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 20,
+      "color": "#fff",
+      "background": "#007bff",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192756,
+      "nombre": "Katherin Liz",
+      "apellido": "Licla López",
+      "dni": "72266717",
+      "email": "katherin.liclalopez@gmail.com",
+      "telefono": "931904680",
+      "ciudad": "Ica",
+      "usuario": "72266717",
+      "clave": "liz72266717",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56509,
+      "iIdDetalle": 79193,
+      "codigo": "COD0651-551605",
+      "descripcion": null,
+      "dateInit": "2024-11-20T17:00:00.000Z",
+      "dateFin": "2025-01-22T17:00:00.000Z",
+      "dateEmision": "2025-01-24T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 85,
+      "ihrlectiva": 200,
+      "curso": "COD0651 - AUXILIAR DE BIBLIOTECA",
+      "asesora": "Equipo 101 ENACAP Deysi Aranda",
+      "iIdPersona": 51,
+      "estado": "Certificado Realizado",
+      "initFormat": "20/11/2024",
+      "finFormat": "22/01/2025",
+      "emisionFormat": "24/01/2025",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 20,
+      "color": "#fff",
+      "background": "#007bff",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192756,
+      "nombre": "Katherin Liz",
+      "apellido": "Licla López",
+      "dni": "72266717",
+      "email": "katherin.liclalopez@gmail.com",
+      "telefono": "931904680",
+      "ciudad": "Ica",
+      "usuario": "72266717",
+      "clave": "liz72266717",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56507,
+      "iIdDetalle": 79174,
+      "codigo": "COD0065-228709",
+      "descripcion": null,
+      "dateInit": "2024-12-05T17:00:00.000Z",
+      "dateFin": "2025-01-06T17:00:00.000Z",
+      "dateEmision": "2025-01-07T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BN CODEPER - AGENTE",
+      "precio": 65,
+      "ihrlectiva": 120,
+      "curso": "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
+      "asesora": "Equipo 101 CODEPER Luz Mery Aniceto",
+      "iIdPersona": 48,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "05/12/2024",
+      "finFormat": "06/01/2025",
+      "emisionFormat": "07/01/2025",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192748,
+      "nombre": "Yelina Mayra",
+      "apellido": "Rojas Torres",
+      "dni": "45313496",
+      "email": "yeligem6@gmail.com",
+      "telefono": "965094698",
+      "ciudad": "Cerro de Pasco",
+      "usuario": "45313496",
+      "clave": "rojas45313496",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56506,
+      "iIdDetalle": 79189,
+      "codigo": "COD0751-666501",
+      "descripcion": "certificado acelerado",
+      "dateInit": "2023-11-25T17:00:00.000Z",
+      "dateFin": "2024-01-27T17:00:00.000Z",
+      "dateEmision": "2024-01-29T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 0,
+      "ihrlectiva": 200,
+      "curso": "COD0751 - PLANIFICACIÓN CURRICULAR EN EDUCACIÓN SECUNDARIA",
+      "asesora": "Equipo 101 INEPRO Georgina Timoteo",
+      "iIdPersona": 118,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "25/11/2023",
+      "finFormat": "27/01/2024",
+      "emisionFormat": "29/01/2024",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192405,
+      "nombre": "Mary Milagros",
+      "apellido": "González Barbarán de Pereyra",
+      "dni": "21143388",
+      "email": "migonzalez2176@hotmail.com",
+      "telefono": "961695205",
+      "ciudad": "Pucallpa",
+      "usuario": "21143388",
+      "clave": "mary21143388",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56505,
+      "iIdDetalle": 79188,
+      "codigo": "COD0011-253110",
+      "descripcion": "certificado acelerado",
+      "dateInit": "2024-02-22T17:00:00.000Z",
+      "dateFin": "2024-04-23T16:00:00.000Z",
+      "dateEmision": "2024-04-24T16:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 0,
+      "ihrlectiva": 200,
+      "curso": "COD0011 - TIC EN LA EDUCACIÓN - NIVEL SECUNDARIA",
+      "asesora": "Equipo 101 INEPRO Georgina Timoteo",
+      "iIdPersona": 118,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "22/02/2024",
+      "finFormat": "23/04/2024",
+      "emisionFormat": "24/04/2024",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192405,
+      "nombre": "Mary Milagros",
+      "apellido": "González Barbarán de Pereyra",
+      "dni": "21143388",
+      "email": "migonzalez2176@hotmail.com",
+      "telefono": "961695205",
+      "ciudad": "Pucallpa",
+      "usuario": "21143388",
+      "clave": "mary21143388",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56504,
+      "iIdDetalle": 79187,
+      "codigo": "COD0018-097381",
+      "descripcion": "certificado acelerado",
+      "dateInit": "2024-11-28T17:00:00.000Z",
+      "dateFin": "2025-01-29T17:00:00.000Z",
+      "dateEmision": "2025-01-30T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 85,
+      "ihrlectiva": 200,
+      "curso": "COD0018 - GESTIÓN DE RECURSOS EDUCATIVOS Y MATERIALES DIDÁCTICOS",
+      "asesora": "Equipo 101 INEPRO Georgina Timoteo",
+      "iIdPersona": 118,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "28/11/2024",
+      "finFormat": "29/01/2025",
+      "emisionFormat": "30/01/2025",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192405,
+      "nombre": "Mary Milagros",
+      "apellido": "González Barbarán de Pereyra",
+      "dni": "21143388",
+      "email": "migonzalez2176@hotmail.com",
+      "telefono": "961695205",
+      "ciudad": "Pucallpa",
+      "usuario": "21143388",
+      "clave": "mary21143388",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56498,
+      "iIdDetalle": 78288,
+      "codigo": "COD0025-245847",
+      "descripcion": null,
+      "dateInit": "2024-08-09T16:00:00.000Z",
+      "dateFin": "2024-10-10T16:00:00.000Z",
+      "dateEmision": "2024-10-12T16:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 0,
+      "ihrlectiva": 200,
+      "curso": "COD0025 - TUTORÍA Y ORIENTACIÓN EDUCATIVA",
+      "asesora": "Equipo 101 CENAPRO Kora Ordoñez",
+      "iIdPersona": 32,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "09/08/2024",
+      "finFormat": "10/10/2024",
+      "emisionFormat": "12/10/2024",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192454,
+      "nombre": "Karla Alexandra",
+      "apellido": "Santillan Ruiz",
+      "dni": "72686505",
+      "email": "arka.santillan.15@gmail.com",
+      "telefono": "918316686",
+      "ciudad": "Iquitos",
+      "usuario": "72686505",
+      "clave": "karla72686505",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    },
+    {
+      "iIdCertificado": 56497,
+      "iIdDetalle": 78287,
+      "codigo": "COD0038-679068",
+      "descripcion": null,
+      "dateInit": "2024-11-09T17:00:00.000Z",
+      "dateFin": "2025-01-08T17:00:00.000Z",
+      "dateEmision": "2025-01-10T17:00:00.000Z",
+      "dateExpidicion": "2025-02-28T17:00:00.000Z",
+      "metodo": "BCP CODEPER - YAPE",
+      "precio": 85,
+      "ihrlectiva": 200,
+      "curso": "COD0038 - AUXILIAR EN EDUCACIÓN",
+      "asesora": "Equipo 101 CENAPRO Kora Ordoñez",
+      "iIdPersona": 32,
+      "estado": "Enviado a WhatsApp",
+      "initFormat": "09/11/2024",
+      "finFormat": "08/01/2025",
+      "emisionFormat": "10/01/2025",
+      "expidicionFormat": "28/02/2025",
+      "pdfUrl": null,
+      "iIdMultiTable": 21,
+      "color": "#fff",
+      "background": "#04B431",
+      "iIdMultiTableCliente": 9,
+      "iIdCliente": 192454,
+      "nombre": "Karla Alexandra",
+      "apellido": "Santillan Ruiz",
+      "dni": "72686505",
+      "email": "arka.santillan.15@gmail.com",
+      "telefono": "918316686",
+      "ciudad": "Iquitos",
+      "usuario": "72686505",
+      "clave": "karla72686505",
+      "isEnvio": 0,
+      "iIdIdentidad": 1,
+      "identidadCodigo": "DNI",
+      "identidad": "LIBRETA ELECTORAL",
+      "fechaFormat": "28/02/2025"
+    }
+    
+  ];
+
   certTemplates: CertTemplate[] = [];
   selectedCert: CertTemplate | null = null;
-  formData: FormData = { nombre: "", apellido: "", curso: "" };
+  selectedCertificado: Certificado | null = null;
   signature: Signature | null = null;
   droppedItems: { [key: string]: DroppedItem } = {};
   dropZones: DropZone[] = [
@@ -117,7 +522,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           file: file,
           dataURL: e.target?.result as string
         };
-        console.log("Template image loaded:", this.newTemplateImage);
       };
       
       reader.readAsDataURL(file);
@@ -176,33 +580,27 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Handle form input changes
-  handleInputChange(event: Event, field: string): void {
-    const target = event.target as HTMLInputElement;
-    this.formData = { ...this.formData, [field]: target.value };
-  }
-
-  // Generate draggable items from form data
+  // Generate draggable items from selected certificate
   handleGenerateItems(): void {
-    const items: GeneratedItem[] = [];
-    
-    if (this.formData.nombre) {
-      items.push({ id: 'nombre', text: this.formData.nombre, type: 'text' });
-    }
-    
-    if (this.formData.apellido) {
-      items.push({ id: 'apellido', text: this.formData.apellido, type: 'text' });
-    }
-    
-    if (this.formData.curso) {
-      items.push({ id: 'curso', text: this.formData.curso, type: 'text' });
-    }
+    if (!this.selectedCertificado) return;
+
+    const items: GeneratedItem[] = [
+      { id: 'nombre', text: `${this.selectedCertificado.nombre} ${this.selectedCertificado.apellido}`, type: 'text' },
+      { id: 'curso', text: this.selectedCertificado.curso, type: 'text' },
+      { id: 'horas', text: `${this.selectedCertificado.ihrlectiva} horas lectivas`, type: 'text' }
+    ];
     
     if (this.signature) {
       items.push({ id: 'firma', text: 'Firma', type: 'signature' });
     }
     
     this.generatedItems = items;
+  }
+
+  // Select a student certificate
+  selectStudent(certificado: Certificado): void {
+    this.selectedCertificado = certificado;
+    this.generatedItems = []; // Clear existing items
   }
 
   // Handle dropping items on certificate
@@ -308,11 +706,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       this.saveTemplatesToStorage();
       this.updateCertificateSize();
       
-      // Instead of trying to access the private pond property,
-      // we'll just set a new empty array to the templateUploadOptions
-      // and then force a refresh of the component
       setTimeout(() => {
-        // This will effectively reset the FilePond component
         this.templateUploadOptions = {
           ...this.templateUploadOptions,
           files: []
