@@ -8,9 +8,7 @@ import { registerPlugin } from 'filepond';
 import { FilePondComponent } from 'ngx-filepond';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
 import { LucideAngularModule } from 'lucide-angular';
-
-import 'filepond/dist/filepond.min.css';
-
+import { CertificateService } from '../services/certificate.service';
 import { 
   CertTemplate, 
   Certificado,
@@ -19,7 +17,6 @@ import {
   GeneratedItem, 
   Signature, 
   CertSize, 
-  SelectedElement,
   PageState,
   PageStates
 } from '../models/certificate.model';
@@ -35,6 +32,7 @@ registerPlugin(FilePondPluginFileValidateType);
     FilePondModule, 
     LucideAngularModule
   ],
+  providers: [CertificateService], // Añade esta línea
   templateUrl: './certification-module.component.html',
   styles: [`
     .signatures-list {
@@ -43,27 +41,23 @@ registerPlugin(FilePondPluginFileValidateType);
       gap: 10px;
       margin-bottom: 15px;
     }
-    
     .signature-item {
       border: 1px solid #ddd;
       border-radius: 4px;
       padding: 10px;
       width: calc(50% - 5px);
     }
-    
     .signature-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
     }
-    
     .signature-preview {
       max-width: 100%;
       height: auto;
       max-height: 60px;
     }
-    
     .remove-signature {
       background: none;
       border: none;
@@ -71,11 +65,9 @@ registerPlugin(FilePondPluginFileValidateType);
       cursor: pointer;
       padding: 4px;
     }
-    
     .remove-signature:hover {
       color: #bd2130;
     }
-    
     .signature-label-input {
       width: 100%;
       padding: 8px;
@@ -83,19 +75,16 @@ registerPlugin(FilePondPluginFileValidateType);
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-
     .certificate-container {
       position: relative;
       overflow: auto;
       border: 1px solid #ccc;
       margin: 20px 0;
     }
-
     .certificate-canvas {
       position: relative;
       transform-origin: 0 0;
     }
-
     .drop-zone {
       position: absolute;
       border: 2px dashed #4285f4;
@@ -105,13 +94,11 @@ registerPlugin(FilePondPluginFileValidateType);
       min-width: 150px;
       min-height: 40px;
     }
-
     .drop-zone-content {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .generated-item {
       padding: 8px;
       margin: 5px;
@@ -120,73 +107,61 @@ registerPlugin(FilePondPluginFileValidateType);
       border-radius: 4px;
       cursor: grab;
     }
-
     .generated-item:active {
       cursor: grabbing;
     }
-
     .zoom-controls {
       position: fixed;
       bottom: 20px;
       right: 20px;
       z-index: 100;
     }
-
     .template-view-controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .template-view-controls button {
-    padding: 8px 16px;
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .template-view-controls button.active {
-    background-color: #4285f4;
-    color: white;
-    border-color: #4285f4;
-  }
-
-  .color-controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .color-button {
-    width: 32px;
-    height: 32px;
-    border: 2px solid #ddd;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-
-  .color-button:hover {
-    transform: scale(1.1);
-  }
-
-  .color-button.active {
-    border-color: #4285f4;
-    box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
-  }
-
-  .color-button.black {
-    background-color: #000;
-  }
-
-  .color-button.white {
-    background-color: #fff;
-    border-color: #666;
-  }
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .template-view-controls button {
+      padding: 8px 16px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .template-view-controls button.active {
+      background-color: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+    .color-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .color-button {
+      width: 32px;
+      height: 32px;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .color-button:hover {
+      transform: scale(1.1);
+    }
+    .color-button.active {
+      border-color: #4285f4;
+      box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+    }
+    .color-button.black {
+      background-color: #000;
+    }
+    .color-button.white {
+      background-color: #fff;
+      border-color: #666;
+    }
   `]
 })
-
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('certificateRef') certificateRef!: ElementRef;
   @ViewChild('certificateContainerRef') certificateContainerRef!: ElementRef;
@@ -194,13 +169,24 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('signaturePond') signaturePondComponent!: FilePondComponent;
 
   Object = Object;
-  newDropZoneLabel: string = "";
-  isAddingDropZone: boolean = false;
-  newSignatureLabel: string = "";
+  newDropZoneLabel = "";
+  isAddingDropZone = false;
+  newSignatureLabel = "";
   signatures: Signature[] = [];
-  zoomLevel: number = 1;
+  zoomLevel = 1;
   textColor: 'black' | 'white' = 'black';
   currentPageId: 'front' | 'back' = 'front';
+  certTemplates: CertTemplate[] = [];
+  selectedCert: CertTemplate | null = null;
+  generatedItems: GeneratedItem[] = [];
+  certSize: CertSize = { width: 1123, height: 794 };
+  draggingItem: GeneratedItem | null = null;
+  draggingZone: DropZone | null = null;
+  dragStartX = 0;
+  dragStartY = 0;
+  dragOffsetX = 0;
+  dragOffsetY = 0;
+  dragOverZone: string | null = null;
 
   pageStates: PageStates = {
     front: {
@@ -219,76 +205,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   };
 
-  initialTemplates: CertTemplate[] = [
-    { 
-      id: 1, 
-      name: "Certificado Básico (Frontal)",
-      imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
-      pageType: 'front'
-    },
-    { 
-      id: 2, 
-      name: "Certificado Profesional (Trasero)",
-      imageUrl: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
-      pageType: 'back'
-    }
-  ];
-
-  certificados: Certificado[] = [
-    {
-      iIdCertificado: 56513,
-      iIdDetalle: 79029,
-      codigo: "COD0065-228710",
-      descripcion: null,
-      dateInit: "2024-12-05T17:00:00.000Z",
-      dateFin: "2025-01-06T17:00:00.000Z",
-      dateEmision: "2025-01-07T17:00:00.000Z",
-      dateExpidicion: "2025-02-28T17:00:00.000Z",
-      metodo: "BCP CODEPER - YAPE",
-      precio: 85,
-      ihrlectiva: 120,
-      curso: "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
-      asesora: "Equipo 001 CENAPRO Cesy Alcedo",
-      iIdPersona: 31,
-      estado: "Enviado a WhatsApp",
-      initFormat: "05/12/2024",
-      finFormat: "06/01/2025",
-      emisionFormat: "07/01/2025",
-      expidicionFormat: "28/02/2025",
-      pdfUrl: null,
-      iIdMultiTable: 21,
-      color: "#fff",
-      background: "#04B431",
-      iIdMultiTableCliente: 9,
-      iIdCliente: 192697,
-      nombre: "Jhonatan Alcides",
-      apellido: "Solís Vilcarima",
-      dni: "70095771",
-      email: "jhonatansv40@gmail.com",
-      telefono: "929432917",
-      ciudad: "Ica",
-      usuario: "70095771",
-      clave: "solis70095771",
-      isEnvio: 0,
-      iIdIdentidad: 1,
-      identidadCodigo: "DNI",
-      identidad: "LIBRETA ELECTORAL",
-      fechaFormat: "28/02/2025",
-      tipo: "diplomado",
-    }
-  ];
-
-  certTemplates: CertTemplate[] = [];
-  selectedCert: CertTemplate | null = null;
-  generatedItems: GeneratedItem[] = [];
-  certSize: CertSize = { width: 1123, height: 794 };
-  draggingItem: GeneratedItem | null = null;
-  draggingZone: DropZone | null = null;
-  dragStartX: number = 0;
-  dragStartY: number = 0;
-  dragOffsetX: number = 0;
-  dragOffsetY: number = 0;
-  dragOverZone: string | null = null;
+  certificados: Certificado[] = [];
 
   signatureUploadOptions: FilePondOptions = {
     allowMultiple: false,
@@ -307,23 +224,105 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           dataURL: e.target?.result as string,
           label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
         };
-        
         this.signatures.push(newSignature);
         this.newSignatureLabel = "";
         this.clearFilePondFiles();
       };
-      
       reader.readAsDataURL(file);
     }
   };
 
-  constructor() {}
+  constructor(private certificateService: CertificateService) {}
 
   ngOnInit(): void {
-    this.certTemplates = [...this.initialTemplates];
-    if (this.certTemplates.length > 0) {
-      this.selectedCert = this.certTemplates[0];
-    }
+    this.loadTemplates();
+    this.loadStudentData();
+  }
+
+  private loadTemplates(): void {
+    this.certificateService.getTemplates().subscribe({
+      next: (templates) => {
+        this.certTemplates = templates;
+        if (this.certTemplates.length > 0) {
+          this.selectedCert = this.certTemplates[0];
+        }
+      },
+      error: (err) => {
+        console.error('Error loading templates:', err);
+        this.certTemplates = [
+          { 
+            id: 1, 
+            name: "Certificado Básico (Frontal)",
+            imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
+            pageType: 'front'
+          },
+          { 
+            id: 2, 
+            name: "Certificado Profesional (Trasero)",
+            imageUrl: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
+            pageType: 'back'
+          }
+        ];
+        if (this.certTemplates.length > 0) {
+          this.selectedCert = this.certTemplates[0];
+        }
+      }
+    });
+  }
+
+  private loadStudentData(): void {
+    this.certificateService.getStudentData().subscribe({
+      next: (students) => {
+        if (students && students.length > 0) {
+          this.certificados = students;
+          this.handleGenerateItems();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading student data:', err);
+        this.certificados = [{
+          iIdCertificado: 56513,
+          iIdDetalle: 79029,
+          codigo: "COD0065-228710",
+          descripcion: null,
+          dateInit: "2024-12-05T17:00:00.000Z",
+          dateFin: "2025-01-06T17:00:00.000Z",
+          dateEmision: "2025-01-07T17:00:00.000Z",
+          dateExpidicion: "2025-02-28T17:00:00.000Z",
+          metodo: "BCP CODEPER - YAPE",
+          precio: 85,
+          ihrlectiva: 120,
+          curso: "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
+          asesora: "Equipo 001 CENAPRO Cesy Alcedo",
+          iIdPersona: 31,
+          estado: "Enviado a WhatsApp",
+          initFormat: "05/12/2024",
+          finFormat: "06/01/2025",
+          emisionFormat: "07/01/2025",
+          expidicionFormat: "28/02/2025",
+          pdfUrl: null,
+          iIdMultiTable: 21,
+          color: "#fff",
+          background: "#04B431",
+          iIdMultiTableCliente: 9,
+          iIdCliente: 192697,
+          nombre: "Jhonatan Alcides",
+          apellido: "Solís Vilcarima",
+          dni: "70095771",
+          email: "jhonatansv40@gmail.com",
+          telefono: "929432917",
+          ciudad: "Ica",
+          usuario: "70095771",
+          clave: "solis70095771",
+          isEnvio: 0,
+          iIdIdentidad: 1,
+          identidadCodigo: "DNI",
+          identidad: "LIBRETA ELECTORAL",
+          fechaFormat: "28/02/2025",
+          tipo: "certificado"
+        }];
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -344,7 +343,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       if (fileInput) {
         fileInput.value = '';
       }
-      
       if (this.signaturePondComponent && typeof (this.signaturePondComponent as any).removeFiles === 'function') {
         (this.signaturePondComponent as any).removeFiles();
       }
