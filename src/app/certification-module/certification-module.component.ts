@@ -129,6 +129,26 @@ registerPlugin(FilePondPluginFileValidateType);
       right: 20px;
       z-index: 100;
     }
+
+    .template-view-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .template-view-controls button {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .template-view-controls button.active {
+    background-color: #4285f4;
+    color: white;
+    border-color: #4285f4;
+  }
   `]
 })
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
@@ -212,7 +232,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   selectedElement: SelectedElement | null = null;
   certSize: CertSize = { width: 1123, height: 794 };
   zoomLevel: number = 1;
-  
+  currentTemplateView: 'front' | 'back' = 'front';
+
   signatureUploadOptions: FilePondOptions = {
     allowMultiple: false,
     labelIdle: 'DROP HERE',
@@ -595,5 +616,23 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   handleZoomOut(): void {
     this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
+  }
+
+  showFrontTemplate(): void {
+    this.currentTemplateView = 'front';
+  }
+  
+  showBackTemplate(): void {
+    this.currentTemplateView = 'back';
+  }
+  
+  getCurrentTemplate(): CertTemplate | null {
+    if (this.certificados[0]?.tipo !== 'diplomado') {
+      return this.selectedCert;
+    }
+    
+    return this.currentTemplateView === 'front' 
+      ? this.selectedCert 
+      : this.certTemplates[1] || this.selectedCert;
   }
 }

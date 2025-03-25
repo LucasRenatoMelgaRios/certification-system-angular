@@ -35,7 +35,7 @@
           <input 
             type="text" 
             [(ngModel)]="newSignatureLabel" 
-            placeholder="Nombre de la firma"
+            placeholder="Nombre del sello"
             class="signature-label-input"
           />
           <file-pond
@@ -96,18 +96,32 @@
 
     <div class="certificate-preview" #certificateContainerRef>
       <h3>{{ certificados[0].tipo === 'diplomado' ? 'DIPLOMADO' : 'CERTIFICADO' }}</h3>
+      <div *ngIf="certificados[0]?.tipo === 'diplomado'" class="template-view-controls">
+        <button 
+          (click)="showFrontTemplate()"
+          [class.active]="currentTemplateView === 'front'"
+        >
+          Vista Frontal
+        </button>
+        <button 
+          (click)="showBackTemplate()"
+          [class.active]="currentTemplateView === 'back'"
+        >
+          Vista Trasera
+        </button>
+      </div>
       <div 
         class="certificate-content" 
         [style.width.px]="certSize.width"
         [style.height.px]="certSize.height"
       >
-        <div 
-          class="certificate-background" 
-          #certificateRef
-          [style.backgroundImage]="'url(' + (selectedCert?.imageUrl || '') + ')'"
-          [style.width.px]="certSize.width"
-          [style.height.px]="certSize.height"
-        ></div>
+      <div 
+      class="certificate-background" 
+      #certificateRef
+      [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'"
+      [style.width.px]="certSize.width"
+      [style.height.px]="certSize.height"
+    ></div>
         
         <div 
           *ngFor="let zone of dropZones" 
