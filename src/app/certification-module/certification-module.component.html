@@ -56,7 +56,7 @@
       <div class="drop-zones-control">
         <h4>Zonas de colocación</h4>
         <div class="drop-zones-list">
-          <div *ngFor="let zone of dropZones" class="drop-zone-item">
+          <div *ngFor="let zone of currentPageState.dropZones" class="drop-zone-item">
             <span>{{ zone.label }}</span>
             <div class="drop-zone-actions">
               <button (click)="handleRemoveDropZone(zone.id)">
@@ -99,13 +99,13 @@
       <div *ngIf="certificados[0]?.tipo === 'diplomado'" class="template-view-controls">
         <button 
           (click)="showFrontTemplate()"
-          [class.active]="currentTemplateView === 'front'"
+          [class.active]="currentPageId === 'front'"
         >
           Vista Frontal
         </button>
         <button 
           (click)="showBackTemplate()"
-          [class.active]="currentTemplateView === 'back'"
+          [class.active]="currentPageId === 'back'"
         >
           Vista Trasera
         </button>
@@ -115,18 +115,18 @@
         [style.width.px]="certSize.width"
         [style.height.px]="certSize.height"
       >
-      <div 
-      class="certificate-background" 
-      #certificateRef
-      [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'"
-      [style.width.px]="certSize.width"
-      [style.height.px]="certSize.height"
-    ></div>
+        <div 
+          class="certificate-background" 
+          #certificateRef
+          [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'"
+          [style.width.px]="certSize.width"
+          [style.height.px]="certSize.height"
+        ></div>
         
         <div 
-          *ngFor="let zone of dropZones" 
+          *ngFor="let zone of currentPageState.dropZones" 
           class="drop-zone"
-          [class.selected]="selectedElement && selectedElement.type === 'dropZone' && selectedElement.id === zone.id"
+          [class.selected]="currentPageState.selectedElement && currentPageState.selectedElement.type === 'dropZone' && currentPageState.selectedElement.id === zone.id"
           [class.drop-zone-active]="isDraggedOver(zone.label)"
           [style.left.px]="zone.position.x"
           [style.top.px]="zone.position.y"
@@ -159,7 +159,7 @@
 
     <div class="items-section">
       <h3>ITEMS GENERADOS</h3>
-      <div class="color-controls" *ngIf="selectedElement?.type === 'item' && selectedElementIsText()">
+      <div class="color-controls" *ngIf="currentPageState.selectedElement?.type === 'item' && selectedElementIsText()">
         <span class="color-label">Color de texto:</span>
         <button 
           (click)="changeTextColor('black')"
@@ -179,7 +179,7 @@
           *ngFor="let item of generatedItems" 
           class="draggable-item"
           [style.color]="item.color || 'black'"
-          [class.selected]="selectedElement && selectedElement.type === 'item' && selectedElement.id === item.id"
+          [class.selected]="currentPageState.selectedElement && currentPageState.selectedElement.type === 'item' && currentPageState.selectedElement.id === item.id"
           [class.dragging]="draggingItem?.id === item.id"
           (mousedown)="startDraggingItem($event, item)"
           (click)="handleSelectElement('item', item.id)"

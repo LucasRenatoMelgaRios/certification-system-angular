@@ -19,7 +19,9 @@ import {
   GeneratedItem, 
   Signature, 
   CertSize, 
-  SelectedElement 
+  SelectedElement,
+  PageState,
+  PageStates
 } from '../models/certificate.model';
 
 registerPlugin(FilePondPluginFileValidateType);
@@ -184,6 +186,7 @@ registerPlugin(FilePondPluginFileValidateType);
   }
   `]
 })
+
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('certificateRef') certificateRef!: ElementRef;
   @ViewChild('certificateContainerRef') certificateContainerRef!: ElementRef;
@@ -195,79 +198,97 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   isAddingDropZone: boolean = false;
   newSignatureLabel: string = "";
   signatures: Signature[] = [];
+  zoomLevel: number = 1;
+  textColor: 'black' | 'white' = 'black';
+  currentPageId: 'front' | 'back' = 'front';
+
+  pageStates: PageStates = {
+    front: {
+      dropZones: [
+        { id: 1, label: "a nombre de", position: { x: 50, y: 150 }, pageId: 'front' },
+        { id: 2, label: "Curso", position: { x: 50, y: 220 }, pageId: 'front' },
+        { id: 3, label: "Firma", position: { x: 200, y: 350 }, pageId: 'front' }
+      ],
+      droppedItems: {},
+      selectedElement: null
+    },
+    back: {
+      dropZones: [],
+      droppedItems: {},
+      selectedElement: null
+    }
+  };
 
   initialTemplates: CertTemplate[] = [
     { 
       id: 1, 
-      name: "Certificado Básico",
-      imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3"
+      name: "Certificado Básico (Frontal)",
+      imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
+      pageType: 'front'
     },
     { 
       id: 2, 
-      name: "Certificado Profesional",
-      imageUrl: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3"
+      name: "Certificado Profesional (Trasero)",
+      imageUrl: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
+      pageType: 'back'
     }
   ];
 
   certificados: Certificado[] = [
     {
-      "iIdCertificado": 56513,
-      "iIdDetalle": 79029,
-      "codigo": "COD0065-228710",
-      "descripcion": null,
-      "dateInit": "2024-12-05T17:00:00.000Z",
-      "dateFin": "2025-01-06T17:00:00.000Z",
-      "dateEmision": "2025-01-07T17:00:00.000Z",
-      "dateExpidicion": "2025-02-28T17:00:00.000Z",
-      "metodo": "BCP CODEPER - YAPE",
-      "precio": 85,
-      "ihrlectiva": 120,
-      "curso": "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
-      "asesora": "Equipo 001 CENAPRO Cesy Alcedo",
-      "iIdPersona": 31,
-      "estado": "Enviado a WhatsApp",
-      "initFormat": "05/12/2024",
-      "finFormat": "06/01/2025",
-      "emisionFormat": "07/01/2025",
-      "expidicionFormat": "28/02/2025",
-      "pdfUrl": null,
-      "iIdMultiTable": 21,
-      "color": "#fff",
-      "background": "#04B431",
-      "iIdMultiTableCliente": 9,
-      "iIdCliente": 192697,
-      "nombre": "Jhonatan Alcides",
-      "apellido": "Solís Vilcarima",
-      "dni": "70095771",
-      "email": "jhonatansv40@gmail.com",
-      "telefono": "929432917",
-      "ciudad": "Ica",
-      "usuario": "70095771",
-      "clave": "solis70095771",
-      "isEnvio": 0,
-      "iIdIdentidad": 1,
-      "identidadCodigo": "DNI",
-      "identidad": "LIBRETA ELECTORAL",
-      "fechaFormat": "28/02/2025",
-      "tipo": "diplomado",
-    },
+      iIdCertificado: 56513,
+      iIdDetalle: 79029,
+      codigo: "COD0065-228710",
+      descripcion: null,
+      dateInit: "2024-12-05T17:00:00.000Z",
+      dateFin: "2025-01-06T17:00:00.000Z",
+      dateEmision: "2025-01-07T17:00:00.000Z",
+      dateExpidicion: "2025-02-28T17:00:00.000Z",
+      metodo: "BCP CODEPER - YAPE",
+      precio: 85,
+      ihrlectiva: 120,
+      curso: "COD0065 - QUECHUA CENTRAL - NIVEL BÁSICO",
+      asesora: "Equipo 001 CENAPRO Cesy Alcedo",
+      iIdPersona: 31,
+      estado: "Enviado a WhatsApp",
+      initFormat: "05/12/2024",
+      finFormat: "06/01/2025",
+      emisionFormat: "07/01/2025",
+      expidicionFormat: "28/02/2025",
+      pdfUrl: null,
+      iIdMultiTable: 21,
+      color: "#fff",
+      background: "#04B431",
+      iIdMultiTableCliente: 9,
+      iIdCliente: 192697,
+      nombre: "Jhonatan Alcides",
+      apellido: "Solís Vilcarima",
+      dni: "70095771",
+      email: "jhonatansv40@gmail.com",
+      telefono: "929432917",
+      ciudad: "Ica",
+      usuario: "70095771",
+      clave: "solis70095771",
+      isEnvio: 0,
+      iIdIdentidad: 1,
+      identidadCodigo: "DNI",
+      identidad: "LIBRETA ELECTORAL",
+      fechaFormat: "28/02/2025",
+      tipo: "diplomado",
+    }
   ];
 
   certTemplates: CertTemplate[] = [];
   selectedCert: CertTemplate | null = null;
-  droppedItems: { [key: string]: DroppedItem } = {};
-  dropZones: DropZone[] = [
-    { id: 1, label: "a nombre de", position: { x: 50, y: 150 } },
-    { id: 2, label: "Curso", position: { x: 50, y: 220 } },
-    { id: 3, label: "Firma", position: { x: 200, y: 350 } }
-  ];
   generatedItems: GeneratedItem[] = [];
-  selectedElement: SelectedElement | null = null;
   certSize: CertSize = { width: 1123, height: 794 };
-  zoomLevel: number = 1;
-  currentTemplateView: 'front' | 'back' = 'front';
-  textColor: 'black' | 'white' = 'black';
-
+  draggingItem: GeneratedItem | null = null;
+  draggingZone: DropZone | null = null;
+  dragStartX: number = 0;
+  dragStartY: number = 0;
+  dragOffsetX: number = 0;
+  dragOffsetY: number = 0;
+  dragOverZone: string | null = null;
 
   signatureUploadOptions: FilePondOptions = {
     allowMultiple: false,
@@ -296,14 +317,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   };
 
-  draggingItem: GeneratedItem | null = null;
-  draggingZone: DropZone | null = null;
-  dragStartX: number = 0;
-  dragStartY: number = 0;
-  dragOffsetX: number = 0;
-  dragOffsetY: number = 0;
-  dragOverZone: string | null = null;
-  
   constructor() {}
 
   ngOnInit(): void {
@@ -317,15 +330,21 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     this.updateCertificateSize();
   }
 
+  get currentPageState(): PageState {
+    return this.pageStates[this.currentPageId];
+  }
+
+  getTemplateForPage(pageId: 'front' | 'back'): CertTemplate | null {
+    return this.certTemplates.find(t => t.pageType === pageId) || null;
+  }
+
   private clearFilePondFiles(): void {
     try {
-      // Acceder al elemento nativo correctamente
       const fileInput = this.signaturePondElement.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) {
-        fileInput.value = ''; // Limpiar el valor del input
+        fileInput.value = '';
       }
       
-      // Usar el API público de FilePond si está disponible
       if (this.signaturePondComponent && typeof (this.signaturePondComponent as any).removeFiles === 'function') {
         (this.signaturePondComponent as any).removeFiles();
       }
@@ -335,7 +354,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   hasDroppedItems(): boolean {
-    return Object.keys(this.droppedItems).length > 0;
+    return Object.keys(this.currentPageState.droppedItems).length > 0;
   }
 
   updateCertificateSize(): void {
@@ -360,19 +379,19 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         id: 'nombre', 
         text: `${certificado.nombre} ${certificado.apellido}`.trim(), 
         type: 'text',
-        color: 'black' // <- Añadir esta propiedad
+        color: 'black'
       },
       { 
         id: 'curso', 
         text: certificado.curso, 
         type: 'text',
-        color: 'black' // <- Añadir esta propiedad
+        color: 'black'
       },
       { 
         id: 'horas', 
         text: `${certificado.ihrlectiva || 0} horas lectivas`, 
         type: 'text',
-        color: 'black' // <- Añadir esta propiedad
+        color: 'black'
       }
     ];
   
@@ -391,15 +410,19 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   removeSignature(index: number): void {
     this.signatures.splice(index, 1);
     
-    Object.entries(this.droppedItems).forEach(([key, item]) => {
-      if (item.type === 'signature' && item.signatureIndex === index) {
-        delete this.droppedItems[key];
-      } else if (item.type === 'signature' && item.signatureIndex! > index) {
-        this.droppedItems[key] = {
-          ...item,
-          signatureIndex: item.signatureIndex! - 1
-        };
-      }
+    Object.keys(this.pageStates).forEach(pageId => {
+      const page = this.pageStates[pageId as 'front' | 'back'];
+      
+      Object.entries(page.droppedItems).forEach(([key, item]) => {
+        if (item.type === 'signature' && item.signatureIndex === index) {
+          delete page.droppedItems[key];
+        } else if (item.type === 'signature' && item.signatureIndex! > index) {
+            page.droppedItems[key] = {
+              ...item,
+              signatureIndex: item.signatureIndex! - 1
+            };
+        }
+      });
     });
     
     if (this.generatedItems.length > 0) {
@@ -413,13 +436,16 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   getDroppedItem(zoneLabel: string): DroppedItem | null {
-    return this.droppedItems[zoneLabel] || null;
+    return this.currentPageState.droppedItems[zoneLabel] || null;
   }
 
   handleDrop(zoneLabel: string, item: GeneratedItem): void {
-    this.droppedItems = {
-      ...this.droppedItems,
-      [zoneLabel]: item
+    this.currentPageState.droppedItems = {
+      ...this.currentPageState.droppedItems,
+      [zoneLabel]: {
+        ...item,
+        pageId: this.currentPageId
+      }
     };
   }
 
@@ -450,7 +476,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     if (this.draggingItem) {
       const certRect = this.certificateRef.nativeElement.getBoundingClientRect();
       
-      for (const zone of this.dropZones) {
+      for (const zone of this.currentPageState.dropZones) {
         const zoneX = zone.position.x + certRect.left;
         const zoneY = zone.position.y + certRect.top;
         const zoneWidth = 150;
@@ -488,7 +514,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   handleDropZoneMove(id: number, x: number, y: number): void {
-    this.dropZones = this.dropZones.map(zone =>
+    this.currentPageState.dropZones = this.currentPageState.dropZones.map(zone =>
       zone.id === id ? { ...zone, position: { x, y } } : zone
     );
   }
@@ -524,33 +550,30 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       format: [this.certSize.width, this.certSize.height]
     });
 
+    this.renderPageToPDF(doc, 'front');
+    
     if (this.certificados[0]?.tipo === 'diplomado') {
-      if (this.selectedCert?.imageUrl) {
-        doc.addImage(this.selectedCert.imageUrl, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
-      }
-      this.addItemsToPDF(doc);
-
       doc.addPage();
-      
-      const secondTemplate = this.certTemplates[1];
-      if (secondTemplate?.imageUrl) {
-        doc.addImage(secondTemplate.imageUrl, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
-      }
-      this.addItemsToPDF(doc);
-    } else {
-      if (this.selectedCert?.imageUrl) {
-        doc.addImage(this.selectedCert.imageUrl, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
-      }
-      this.addItemsToPDF(doc);
+      this.renderPageToPDF(doc, 'back');
     }
 
     const filename = this.certificados[0]?.tipo === 'diplomado' ? 'diplomado.pdf' : 'certificado.pdf';
     doc.save(filename);
   }
 
-  private addItemsToPDF(doc: jsPDF): void {
-    Object.entries(this.droppedItems).forEach(([zoneLabel, item]) => {
-      const zone = this.dropZones.find(z => z.label === zoneLabel);
+  private renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): void {
+    const template = this.getTemplateForPage(pageId);
+    if (template?.imageUrl) {
+      doc.addImage(template.imageUrl, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
+    }
+    this.addItemsToPDF(doc, pageId);
+  }
+
+  private addItemsToPDF(doc: jsPDF, pageId: 'front' | 'back'): void {
+    const pageState = this.pageStates[pageId];
+    
+    Object.entries(pageState.droppedItems).forEach(([zoneLabel, item]) => {
+      const zone = pageState.dropZones.find(z => z.label === zoneLabel);
       if (zone) {
         const xPos = zone.position.x;
         const yPos = zone.position.y + 30;
@@ -579,42 +602,45 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       const newDropZone: DropZone = {
         id: Date.now(),
         label: this.newDropZoneLabel,
-        position: { x: 100, y: 100 }
+        position: { x: 100, y: 100 },
+        pageId: this.currentPageId
       };
       
-      this.dropZones = [...this.dropZones, newDropZone];
+      this.currentPageState.dropZones = [...this.currentPageState.dropZones, newDropZone];
       this.newDropZoneLabel = "";
       this.isAddingDropZone = false;
     }
   }
 
   handleRemoveDropZone(id: number): void {
-    const zoneToRemove = this.dropZones.find(zone => zone.id === id);
+    const zoneToRemove = this.currentPageState.dropZones.find(zone => zone.id === id);
     if (zoneToRemove) {
-      const { [zoneToRemove.label]: _, ...updatedDroppedItems } = this.droppedItems;
-      this.droppedItems = updatedDroppedItems;
+      const { [zoneToRemove.label]: _, ...updatedDroppedItems } = this.currentPageState.droppedItems;
+      this.currentPageState.droppedItems = updatedDroppedItems;
     }
 
-    this.dropZones = this.dropZones.filter(zone => zone.id !== id);
+    this.currentPageState.dropZones = this.currentPageState.dropZones.filter(zone => zone.id !== id);
 
-    if (this.selectedElement && this.selectedElement.type === 'dropZone' && this.selectedElement.id === id) {
-      this.selectedElement = null;
+    if (this.currentPageState.selectedElement && 
+        this.currentPageState.selectedElement.type === 'dropZone' && 
+        this.currentPageState.selectedElement.id === id) {
+      this.currentPageState.selectedElement = null;
     }
   }
 
-  handleSelectElement(type: string, id: number | string): void {
-    this.selectedElement = { type, id };
+  handleSelectElement(type: 'dropZone' | 'item', id: number | string): void {
+    this.currentPageState.selectedElement = { type, id, pageId: this.currentPageId };
   }
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
-    if (!this.selectedElement) return;
+    if (!this.currentPageState.selectedElement) return;
 
     const step = event.shiftKey ? 10 : 5;
     let newX, newY;
 
-    if (this.selectedElement.type === 'dropZone') {
-      const zone = this.dropZones.find(z => z.id === this.selectedElement?.id);
+    if (this.currentPageState.selectedElement.type === 'dropZone') {
+      const zone = this.currentPageState.dropZones.find(z => z.id === this.currentPageState.selectedElement?.id);
       if (!zone) return;
 
       newX = zone.position.x;
@@ -635,7 +661,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   isItemDroppedInZone(zoneLabel: string): boolean {
-    return !!this.droppedItems[zoneLabel];
+    return !!this.currentPageState.droppedItems[zoneLabel];
   }
 
   handleZoomIn(): void {
@@ -647,41 +673,38 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   changeTextColor(newColor: 'black' | 'white'): void {
-    if (!this.selectedElement || this.selectedElement.type !== 'item') return;
+    if (!this.currentPageState.selectedElement || this.currentPageState.selectedElement.type !== 'item') return;
     
-    const item = this.generatedItems.find(i => i.id === this.selectedElement?.id);
+    const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
     if (item && item.type === 'text') {
       item.color = newColor;
       this.textColor = newColor;
       
-      // Actualizar droppedItems
-      Object.keys(this.droppedItems).forEach(zoneLabel => {
-        if (this.droppedItems[zoneLabel].id === item.id) {
-          this.droppedItems[zoneLabel].color = newColor;
+      Object.keys(this.currentPageState.droppedItems).forEach(zoneLabel => {
+        if (this.currentPageState.droppedItems[zoneLabel].id === item.id) {
+          this.currentPageState.droppedItems[zoneLabel].color = newColor;
         }
       });
     }
   }
+
   selectedElementIsText(): boolean {
-    if (!this.selectedElement || this.selectedElement.type !== 'item') return false;
-    const item = this.generatedItems.find(i => i.id === this.selectedElement?.id);
+    if (!this.currentPageState.selectedElement || this.currentPageState.selectedElement.type !== 'item') return false;
+    const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
     return item ? item.type === 'text' : false;
   }
+
   showFrontTemplate(): void {
-    this.currentTemplateView = 'front';
+    this.currentPageId = 'front';
+    this.selectedCert = this.getTemplateForPage('front');
   }
   
   showBackTemplate(): void {
-    this.currentTemplateView = 'back';
+    this.currentPageId = 'back';
+    this.selectedCert = this.getTemplateForPage('back');
   }
   
   getCurrentTemplate(): CertTemplate | null {
-    if (this.certificados[0]?.tipo !== 'diplomado') {
-      return this.selectedCert;
-    }
-    
-    return this.currentTemplateView === 'front' 
-      ? this.selectedCert 
-      : this.certTemplates[1] || this.selectedCert;
+    return this.getTemplateForPage(this.currentPageId);
   }
 }
