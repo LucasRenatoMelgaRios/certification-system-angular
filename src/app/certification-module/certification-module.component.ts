@@ -149,6 +149,39 @@ registerPlugin(FilePondPluginFileValidateType);
     color: white;
     border-color: #4285f4;
   }
+
+  .color-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .color-button {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .color-button:hover {
+    transform: scale(1.1);
+  }
+
+  .color-button.active {
+    border-color: #4285f4;
+    box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+  }
+
+  .color-button.black {
+    background-color: #000;
+  }
+
+  .color-button.white {
+    background-color: #fff;
+    border-color: #666;
+  }
   `]
 })
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
@@ -233,6 +266,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   certSize: CertSize = { width: 1123, height: 794 };
   zoomLevel: number = 1;
   currentTemplateView: 'front' | 'back' = 'front';
+  textColor: 'black' | 'white' = 'black';
+
 
   signatureUploadOptions: FilePondOptions = {
     allowMultiple: false,
@@ -317,36 +352,30 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   handleGenerateItems(): void {
-    if (!this.certificados[0]) {
-      console.error('No certificate data available');
-      return;
-    }
+    if (!this.certificados[0]) return;
   
     const certificado = this.certificados[0];
-    
-    if (!certificado.nombre || !certificado.apellido || !certificado.curso) {
-      console.error('Missing required certificate data');
-      return;
-    }
-  
     const items: GeneratedItem[] = [
       { 
         id: 'nombre', 
         text: `${certificado.nombre} ${certificado.apellido}`.trim(), 
-        type: 'text' 
+        type: 'text',
+        color: 'black' // <- Añadir esta propiedad
       },
       { 
         id: 'curso', 
         text: certificado.curso, 
-        type: 'text' 
+        type: 'text',
+        color: 'black' // <- Añadir esta propiedad
       },
       { 
         id: 'horas', 
         text: `${certificado.ihrlectiva || 0} horas lectivas`, 
-        type: 'text' 
+        type: 'text',
+        color: 'black' // <- Añadir esta propiedad
       }
     ];
-    
+  
     this.signatures.forEach((sig, index) => {
       items.push({ 
         id: `firma-${index}`, 
@@ -355,7 +384,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         signatureIndex: index
       });
     });
-    
+  
     this.generatedItems = items;
   }
 
@@ -525,21 +554,20 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       if (zone) {
         const xPos = zone.position.x;
         const yPos = zone.position.y + 30;
-
         doc.setFontSize(24);
-
+  
         if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
           const signature = this.signatures[item.signatureIndex];
           if (signature) {
             try {
-              const sigWidth = 150;
-              const sigHeight = 75;
-              doc.addImage(signature.dataURL, 'PNG', xPos, yPos, sigWidth, sigHeight);
+              doc.addImage(signature.dataURL, 'PNG', xPos, yPos, 150, 75);
             } catch (error) {
               console.error("Error adding signature to PDF:", error);
             }
           }
         } else {
+          doc.setFillColor(item.color === 'white' ? '#ffffff' : '#000000');
+          doc.setTextColor(item.color === 'white' ? '#ffffff' : '#000000');
           doc.text(item.text, xPos, yPos);
         }
       }
@@ -618,6 +646,27 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
   }
 
+  changeTextColor(newColor: 'black' | 'white'): void {
+    if (!this.selectedElement || this.selectedElement.type !== 'item') return;
+    
+    const item = this.generatedItems.find(i => i.id === this.selectedElement?.id);
+    if (item && item.type === 'text') {
+      item.color = newColor;
+      this.textColor = newColor;
+      
+      // Actualizar droppedItems
+      Object.keys(this.droppedItems).forEach(zoneLabel => {
+        if (this.droppedItems[zoneLabel].id === item.id) {
+          this.droppedItems[zoneLabel].color = newColor;
+        }
+      });
+    }
+  }
+  selectedElementIsText(): boolean {
+    if (!this.selectedElement || this.selectedElement.type !== 'item') return false;
+    const item = this.generatedItems.find(i => i.id === this.selectedElement?.id);
+    return item ? item.type === 'text' : false;
+  }
   showFrontTemplate(): void {
     this.currentTemplateView = 'front';
   }

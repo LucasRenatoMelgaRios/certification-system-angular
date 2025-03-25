@@ -133,7 +133,7 @@
           (mousedown)="startDraggingZone($event, zone)"
           (click)="handleSelectElement('dropZone', zone.id)"
         >
-          <ng-container *ngIf="isItemDroppedInZone(zone.label); else placeholder">
+          <ng-container [style.color]="getDroppedItem(zone.label)?.color || 'black'" *ngIf="isItemDroppedInZone(zone.label); else placeholder">
             <img 
               *ngIf="getDroppedItem(zone.label)?.type === 'signature'" 
               [src]="getSignatureUrl(getDroppedItem(zone.label)?.signatureIndex)" 
@@ -159,10 +159,26 @@
 
     <div class="items-section">
       <h3>ITEMS GENERADOS</h3>
+      <div class="color-controls" *ngIf="selectedElement?.type === 'item' && selectedElementIsText()">
+        <span class="color-label">Color de texto:</span>
+        <button 
+          (click)="changeTextColor('black')"
+          [class.active]="textColor === 'black'"
+          class="color-button black"
+          title="Texto negro"
+        ></button>
+        <button 
+          (click)="changeTextColor('white')"
+          [class.active]="textColor === 'white'"
+          class="color-button white"
+          title="Texto blanco"
+        ></button>
+      </div>
       <div class="items-container">
         <div 
           *ngFor="let item of generatedItems" 
           class="draggable-item"
+          [style.color]="item.color || 'black'"
           [class.selected]="selectedElement && selectedElement.type === 'item' && selectedElement.id === item.id"
           [class.dragging]="draggingItem?.id === item.id"
           (mousedown)="startDraggingItem($event, item)"

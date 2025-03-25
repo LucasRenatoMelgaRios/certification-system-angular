@@ -50,6 +50,7 @@ export interface DropZone {
   id: number;
   label: string;
   position: { x: number; y: number };
+  
 }
 
 export interface DroppedItem {
@@ -57,13 +58,14 @@ export interface DroppedItem {
   text: string;
   type: string;
   signatureIndex?: number;
+  color?: string; // <- Añade esta línea
 }
-
 export interface GeneratedItem {
   id: string;
   text: string;
   type: string;
   signatureIndex?: number;
+  color?: string; // <- Añadir esta línea
 }
 
 export interface Signature {
