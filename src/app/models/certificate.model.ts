@@ -43,6 +43,7 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
+  tipo: "certificado" | "diplomado";
 }
 
 export interface DropZone {
@@ -55,17 +56,21 @@ export interface DroppedItem {
   id: string;
   text: string;
   type: string;
+  signatureIndex?: number;
 }
 
 export interface GeneratedItem {
   id: string;
   text: string;
   type: string;
+  signatureIndex?: number;
 }
 
 export interface Signature {
+  id: number;
   file: File;
   dataURL: string;
+  label: string;
 }
 
 export interface CertSize {

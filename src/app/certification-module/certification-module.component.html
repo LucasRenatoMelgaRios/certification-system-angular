@@ -12,77 +12,32 @@
           <img [src]="cert.imageUrl" [alt]="cert.name" />
         </div>
         <span>{{ cert.name }}</span>
-        <button 
-          class="delete-template-button" 
-          (click)="$event.stopPropagation(); handleDeleteTemplate(cert.id)"
-        >
-          ❌
-        </button>
       </div>
-      <button 
-        class="add-template-button"
-        (click)="showAddTemplate = !showAddTemplate"
-      >
-        <lucide-icon name="circle-plus"></lucide-icon>
-      </button>
-    </div>
-    
-    <div class="add-template-form" *ngIf="showAddTemplate">
-      <div class="template-upload-section">
-        <label>Imagen de plantilla</label>
-        <div class="template-upload">
-          <file-pond 
-            #templatePond
-            [options]="templateUploadOptions" 
-            (onupdatefiles)="handleTemplateImageUpload($event)">
-          </file-pond>
-        </div>
-      </div>
-      <div class="template-name-section">
-        <label>Nombre de la plantilla</label>
-        <input
-          type="text"
-          placeholder="Nombre de la nueva plantilla"
-          [(ngModel)]="newTemplateName"
-        />
-      </div>
-      <button 
-        (click)="handleAddTemplate()"
-        [disabled]="!newTemplateName.trim() || !newTemplateImage"
-      >
-        Guardar plantilla
-      </button>
     </div>
   </div>
 
   <div class="cert-content">
-    <div class="students-section">
-      <h3>LISTA DE ESTUDIANTES</h3>
-      <div class="students-list">
-        <div 
-          *ngFor="let certificado of certificados" 
-          class="student-item"
-          [class.selected]="selectedCertificado?.iIdCertificado === certificado.iIdCertificado"
-          (click)="selectStudent(certificado)"
-        >
-          <div class="student-header">
-            <h4>{{ certificado.nombre }} {{ certificado.apellido }}</h4>
-            <span class="student-status" [style.background]="certificado.background">
-              {{ certificado.estado }}
-            </span>
-          </div>
-          <div class="student-details">
-            <p><strong>Curso:</strong> {{ certificado.curso }}</p>
-            <p><strong>Fecha inicio:</strong> {{ certificado.initFormat }}</p>
-            <p><strong>Fecha fin:</strong> {{ certificado.finFormat }}</p>
-            <p><strong>Horas lectivas:</strong> {{ certificado.ihrlectiva }}</p>
+    <div class="left-panel">
+      <div class="signature-section">
+        <h4>Sellos del certificado</h4>
+        <div class="signatures-list">
+          <div *ngFor="let sig of signatures; let i = index" class="signature-item">
+            <div class="signature-header">
+              <span>Firma {{ i + 1 }}</span>
+              <button class="remove-signature" (click)="removeSignature(i)">
+                <lucide-icon name="trash-2"></lucide-icon>
+              </button>
+            </div>
+            <img [src]="sig.dataURL" alt="Firma preview" class="signature-preview" />
           </div>
         </div>
-      </div>
-
-      <div class="signature-section">
-        <h4>Firma del certificado</h4>
         <div class="signature-upload">
+          <input 
+            type="text" 
+            [(ngModel)]="newSignatureLabel" 
+            placeholder="Nombre de la firma"
+            class="signature-label-input"
+          />
           <file-pond
             #signaturePond
             [options]="signatureUploadOptions"
@@ -92,7 +47,7 @@
         <button 
           class="generate-button"
           (click)="handleGenerateItems()"
-          [disabled]="!selectedCertificado || !signature"
+          [disabled]="signatures.length === 0"
         >
           Generar items
         </button>
@@ -140,7 +95,7 @@
     </div>
 
     <div class="certificate-preview" #certificateContainerRef>
-      <h3>CERTIFICADO</h3>
+      <h3>{{ certificados[0].tipo === 'diplomado' ? 'DIPLOMADO' : 'CERTIFICADO' }}</h3>
       <div 
         class="certificate-content" 
         [style.width.px]="certSize.width"
@@ -166,13 +121,13 @@
         >
           <ng-container *ngIf="isItemDroppedInZone(zone.label); else placeholder">
             <img 
-              *ngIf="getDropZoneContent(zone.label) === 'signature' && signature" 
-              [src]="signature.dataURL" 
+              *ngIf="getDroppedItem(zone.label)?.type === 'signature'" 
+              [src]="getSignatureUrl(getDroppedItem(zone.label)?.signatureIndex)" 
               alt="Firma" 
               class="signature-preview" 
             />
-            <span *ngIf="getDropZoneContent(zone.label) !== 'signature'">
-              {{ getDropZoneContent(zone.label) }}
+            <span *ngIf="getDroppedItem(zone.label)?.type !== 'signature'">
+              {{ getDroppedItem(zone.label)?.text }}
             </span>
           </ng-container>
           <ng-template #placeholder>
@@ -202,10 +157,10 @@
           [style.fontWeight]="'bold'"
           tabindex="0"
         >
-          {{ item.text }}
+          {{ item.type === 'signature' ? 'Firma ' + (item.signatureIndex! + 1) : item.text }}
         </div>
         <p *ngIf="generatedItems.length === 0" class="no-items">
-          Selecciona un estudiante y genera los items para arrastrar al certificado
+          Genera los items para arrastrar al certificado
         </p>
       </div>
     </div>
@@ -217,7 +172,7 @@
       (click)="handleExportPDF()"
       [disabled]="!hasDroppedItems()"
     >
-      Exportar PDF
+      Exportar {{ certificados[0].tipo === 'diplomado' ? 'Diplomado' : 'Certificado' }} PDF
     </button>
   </div>
 </div>
