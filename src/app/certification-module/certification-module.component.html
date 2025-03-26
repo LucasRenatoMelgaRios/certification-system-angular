@@ -18,86 +18,39 @@
 
   <div class="cert-content">
     <div class="left-panel">
-      <div class="signature-section">
-        <h4>Sellos del certificado</h4>
-        <div class="signatures-list">
-          <div *ngFor="let sig of signatures; let i = index" class="signature-item">
-            <div class="signature-header">
-              <span>Firma {{ i + 1 }}</span>
-              <button class="remove-signature" (click)="removeSignature(i)">
-                <lucide-icon name="trash-2"></lucide-icon>
-              </button>
-            </div>
-            <img [src]="sig.dataURL" alt="Firma preview" class="signature-preview" />
-          </div>
-        </div>
-        <div class="signature-upload">
-          <input 
-            type="text" 
-            [(ngModel)]="newSignatureLabel" 
-            placeholder="Nombre del sello"
-            class="signature-label-input"
-          />
-          <file-pond
-            #signaturePond
-            [options]="signatureUploadOptions"
-            (onupdatefiles)="handleFileUpload($event)"
-          ></file-pond>
-        </div>
-        <button 
-          class="generate-button"
-          (click)="handleGenerateItems()"
-          [disabled]="signatures.length === 0"
-        >
-          Generar items
-        </button>
-      </div>
-
       <div class="drop-zones-control">
         <h4>Zonas de colocación</h4>
         <div class="drop-zones-list">
           <div *ngFor="let zone of currentPageState.dropZones" class="drop-zone-item">
             <span>{{ zone.label }}</span>
             <div class="drop-zone-actions">
-              <button (click)="handleRemoveDropZone(zone.id)">
-                <lucide-icon name="trash-2"></lucide-icon>
+              <button (click)="handleSelectElement('dropZone', zone.id)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M3 3h18v18H3z"></path>
+                </svg>
+              </button>
+              <button (click)="toggleZoneVisibility(zone.id)" [title]="zone.hidden ? 'Mostrar elemento' : 'Ocultar elemento'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path *ngIf="!zone.hidden" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle *ngIf="!zone.hidden" cx="12" cy="12" r="3"></circle>
+                  <path *ngIf="zone.hidden" d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5-5"></path>
+                </svg>
               </button>
             </div>
           </div>
         </div>
         
-        <div *ngIf="isAddingDropZone" class="add-drop-zone-form">
-          <input
-            type="text"
-            placeholder="Nombre de la zona"
-            [(ngModel)]="newDropZoneLabel"
-          />
-          <div class="drop-zone-form-actions">
-            <button (click)="handleAddDropZone()">Agregar</button>
-            <button (click)="isAddingDropZone = false">Cancelar</button>
-          </div>
-        </div>
-        
-        <button 
-          *ngIf="!isAddingDropZone"
-          class="add-drop-zone-button"
-          (click)="isAddingDropZone = true"
-        >
-          <lucide-icon name="circle-plus"></lucide-icon>
-          Agregar zona
-        </button>
-        
         <div class="drag-instructions">
           <p>Haz clic en una zona y usa las flechas del teclado para moverla</p>
           <p>Mantén presionado Shift + flechas para movimientos más grandes</p>
+          <p>Usa el icono de ojo para ocultar/mostrar elementos</p>
         </div>
       </div>
     </div>
 
     <div class="certificate-preview" #certificateContainerRef>
-      <!-- Controles de zoom -->
       <div class="zoom-controls-container">
-        <button class="zoom-button" (click)="handleZoomOut()" [disabled]="zoomLevel <= 0.25">
+        <button class="zoom-button" (click)="handleZoomOut()" [disabled]="zoomLevel <= 0.5">
           -
         </button>
         <span class="zoom-level-display">{{ (zoomLevel * 100).toFixed(0) }}%</span>
@@ -106,8 +59,8 @@
         </button>
       </div>
 
-      <h3>{{ certificados[0].tipo === 'diplomado' ? 'DIPLOMADO' : 'CERTIFICADO' }}</h3>
-      <div *ngIf="certificados[0]?.tipo === 'diplomado'" class="template-view-controls">
+      <h3>{{ getCurrentTemplate()?.pageType === 'front' ? 'CERTIFICADO' : 'DIPLOMADO' }}</h3>
+      <div *ngIf="getTemplateForPage('back')" class="template-view-controls">
         <button 
           (click)="showFrontTemplate()"
           [class.active]="currentPageId === 'front'"
@@ -121,18 +74,7 @@
           Vista Trasera
         </button>
       </div>
-      <div *ngIf="currentPageId === 'front'" class="front-options">
-        <label *ngFor="let frontTemplate of frontTemplates">
-          <input 
-            type="radio" 
-            name="frontTemplate" 
-            [value]="frontTemplate.id" 
-            [checked]="selectedCert?.id === frontTemplate.id"
-            (change)="selectTemplate(frontTemplate)"
-          >
-          {{ frontTemplate.name }}
-        </label>
-      </div>
+      
       <div 
         class="certificate-content" 
         [style.transform]="'scale(' + zoomLevel + ')'"
@@ -151,73 +93,29 @@
         <div 
           *ngFor="let zone of currentPageState.dropZones" 
           class="drop-zone"
-          [class.selected]="currentPageState.selectedElement && currentPageState.selectedElement.type === 'dropZone' && currentPageState.selectedElement.id === zone.id"
-          [class.drop-zone-active]="isDraggedOver(zone.label)"
+          [class.selected]="currentPageState.selectedElement?.type === 'dropZone' && currentPageState.selectedElement?.id === zone.id"
+          [class.hidden]="zone.hidden"
           [style.left.px]="zone.position.x"
           [style.top.px]="zone.position.y"
           (mousedown)="startDraggingZone($event, zone)"
           (click)="handleSelectElement('dropZone', zone.id)"
         >
-          <ng-container [style.color]="getDroppedItem(zone.label)?.color || 'black'" *ngIf="isItemDroppedInZone(zone.label); else placeholder">
-            <img 
-              *ngIf="getDroppedItem(zone.label)?.type === 'signature'" 
-              [src]="getSignatureUrl(getDroppedItem(zone.label)?.signatureIndex)" 
-              alt="Firma" 
-              class="signature-preview" 
-            />
-            <span *ngIf="getDroppedItem(zone.label)?.type !== 'signature'">
-              {{ getDroppedItem(zone.label)?.text }}
-            </span>
-          </ng-container>
-          <ng-template #placeholder>
-            <span class="drop-placeholder">{{ zone.label }}</span>
-          </ng-template>
+          <span class="zone-content">
+            {{ getStudentDataForZone(zone.label) }}
+          </span>
           
           <div class="drop-zone-controls">
-            <button class="control-button delete" (click)="$event.stopPropagation(); handleRemoveDropZone(zone.id)">
-              <lucide-icon name="trash-2"></lucide-icon>
+            <button class="control-button toggle-visibility" 
+                    (click)="$event.stopPropagation(); toggleZoneVisibility(zone.id)"
+                    [title]="zone.hidden ? 'Mostrar elemento' : 'Ocultar elemento'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path *ngIf="!zone.hidden" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle *ngIf="!zone.hidden" cx="12" cy="12" r="3"></circle>
+                <path *ngIf="zone.hidden" d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5-5"></path>
+              </svg>
             </button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="items-section">
-      <h3>ITEMS GENERADOS</h3>
-      <div class="color-controls" *ngIf="currentPageState.selectedElement?.type === 'item' && selectedElementIsText()">
-        <span class="color-label">Color de texto:</span>
-        <button 
-          (click)="changeTextColor('black')"
-          [class.active]="textColor === 'black'"
-          class="color-button black"
-          title="Texto negro"
-        ></button>
-        <button 
-          (click)="changeTextColor('white')"
-          [class.active]="textColor === 'white'"
-          class="color-button white"
-          title="Texto blanco"
-        ></button>
-      </div>
-      <div class="items-container">
-        <div 
-          *ngFor="let item of generatedItems" 
-          class="draggable-item"
-          [style.color]="item.color || 'black'"
-          [class.selected]="currentPageState.selectedElement && currentPageState.selectedElement.type === 'item' && currentPageState.selectedElement.id === item.id"
-          [class.dragging]="draggingItem?.id === item.id"
-          (mousedown)="startDraggingItem($event, item)"
-          (click)="handleSelectElement('item', item.id)"
-          [style.fontSize.px]="20"
-          [style.fontWeight]="'bold'"
-          tabindex="0"
-        >
-
-        {{ item.type === 'signature' ? 'Firma: ' + item.text : item.text }}
-      </div>
-        <p *ngIf="generatedItems.length === 0" class="no-items">
-          Genera los items para arrastrar al certificado
-        </p>
       </div>
     </div>
   </div>
@@ -226,9 +124,8 @@
     <button 
       class="export-button" 
       (click)="handleExportPDF()"
-      [disabled]="!hasDroppedItems()"
     >
-      Exportar {{ certificados[0].tipo === 'diplomado' ? 'Diplomado' : 'Certificado' }} PDF
+      Exportar {{ getCurrentTemplate()?.pageType === 'front' ? 'Certificado' : 'Diplomado' }} PDF
     </button>
   </div>
 </div>

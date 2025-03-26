@@ -2,79 +2,16 @@ import { Component, OnInit, ViewChild, ElementRef, HostListener, AfterViewInit, 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
-import { FilePondModule } from 'ngx-filepond';
-import { FilePondOptions } from 'filepond';
-import { registerPlugin } from 'filepond';
-import { FilePondComponent } from 'ngx-filepond';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import { LucideAngularModule } from 'lucide-angular';
 import { CertificateService } from '../services/certificate.service';
-import { 
-  CertTemplate, 
-  Certificado,
-  DropZone, 
-  DroppedItem, 
-  GeneratedItem, 
-  Signature, 
-  CertSize, 
-  PageState,
-  PageStates
-} from '../models/certificate.model';
-
-registerPlugin(FilePondPluginFileValidateType);
+import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize } from '../models/certificate.model';
 
 @Component({
   selector: 'app-certification-module',
   standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule, 
-    FilePondModule, 
-    LucideAngularModule
-  ],
+  imports: [CommonModule, FormsModule],
   providers: [CertificateService],
   templateUrl: './certification-module.component.html',
   styles: [`
-    .signatures-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .signature-item {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 10px;
-      width: calc(100% - 5px);
-    }
-    .signature-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .signature-preview {
-      max-width: 100%;
-      height: auto;
-      max-height: 60px;
-    }
-    .remove-signature {
-      background: none;
-      border: none;
-      color: #dc3545;
-      cursor: pointer;
-      padding: 4px;
-    }
-    .remove-signature:hover {
-      color: #bd2130;
-    }
-    .signature-label-input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
     .certificate-container {
       position: relative;
       overflow: auto;
@@ -99,17 +36,6 @@ registerPlugin(FilePondPluginFileValidateType);
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .generated-item {
-      padding: 8px;
-      margin: 5px;
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      cursor: grab;
-    }
-    .generated-item:active {
-      cursor: grabbing;
-    }
     .zoom-controls {
       position: fixed;
       bottom: 20px;
@@ -133,33 +59,6 @@ registerPlugin(FilePondPluginFileValidateType);
       color: white;
       border-color: #4285f4;
     }
-    .color-controls {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .color-button {
-      width: 32px;
-      height: 32px;
-      border: 2px solid #ddd;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .color-button:hover {
-      transform: scale(1.1);
-    }
-    .color-button.active {
-      border-color: #4285f4;
-      box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
-    }
-    .color-button.black {
-      background-color: #000;
-    }
-    .color-button.white {
-      background-color: #fff;
-      border-color: #666;
-    }
     .cert-template-preview img {
       display: block;
       max-width: 100%;
@@ -167,42 +66,53 @@ registerPlugin(FilePondPluginFileValidateType);
       object-fit: contain;
       background: white;
     }
+
+    .drop-zone.hidden {
+  opacity: 0.5;
+  border-style: dotted;
+}
+
+.drop-zone.hidden .zone-content {
+  display: none;
+}
+
+.control-button.toggle-visibility {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 5px;
+}
+
+.control-button.toggle-visibility svg {
+  vertical-align: middle;
+}
   `]
 })
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('certificateRef') certificateRef!: ElementRef;
   @ViewChild('certificateContainerRef') certificateContainerRef!: ElementRef;
-  @ViewChild('signaturePond', { read: ElementRef }) signaturePondElement!: ElementRef;
-  @ViewChild('signaturePond') signaturePondComponent!: FilePondComponent;
 
   Object = Object;
-  newDropZoneLabel = "";
-  isAddingDropZone = false;
-  newSignatureLabel = "";
-  signatures: Signature[] = [];
   zoomLevel = 1;
-  textColor: 'black' | 'white' = 'black';
   currentPageId: 'front' | 'back' = 'front';
   certTemplates: CertTemplate[] = [];
   selectedCert: CertTemplate | null = null;
-  generatedItems: GeneratedItem[] = [];
   certSize: CertSize = { width: 1123, height: 794 };
-  draggingItem: GeneratedItem | null = null;
   draggingZone: DropZone | null = null;
   dragStartX = 0;
   dragStartY = 0;
   dragOffsetX = 0;
   dragOffsetY = 0;
-  dragOverZone: string | null = null;
   templateImageLoaded = false;
   currentTemplateImage: HTMLImageElement | null = null;
 
   pageStates: PageStates = {
     front: {
       dropZones: [
-        { id: 1, label: "a nombre de", position: { x: 50, y: 150 }, pageId: 'front' },
-        { id: 2, label: "Curso", position: { x: 50, y: 220 }, pageId: 'front' },
-        { id: 3, label: "Firma", position: { x: 200, y: 350 }, pageId: 'front' }
+        { id: 1, label: "nombre", position: { x: 50, y: 150 }, pageId: 'front' },
+        { id: 2, label: "curso", position: { x: 50, y: 220 }, pageId: 'front' },
+        { id: 3, label: "horas lectivas", position: { x: 50, y: 290 }, pageId: 'front' }
       ],
       droppedItems: {},
       selectedElement: null
@@ -215,33 +125,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   };
 
   certificados: Certificado[] = [];
-
-  signatureUploadOptions: FilePondOptions = {
-    allowMultiple: false,
-    labelIdle: 'DROP HERE',
-    acceptedFileTypes: ['image/*'],
-    onaddfile: (err: any, fileItem: { file: any; }) => {
-      if (err || !fileItem.file) return;
-      
-      const file = fileItem.file;
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const newSignature: Signature = {
-          id: Date.now(),
-          file: file,
-          dataURL: e.target?.result as string,
-          label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
-        };
-        this.signatures = [...this.signatures, newSignature];
-        this.newSignatureLabel = "";
-        this.clearFilePondFiles();
-        this.handleGenerateItems();
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   constructor(
     private certificateService: CertificateService,
@@ -257,14 +140,10 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     return url;
   }
 
-  private async loadTemplates(): Promise<void> {
+  private loadTemplates(): void {
     this.certificateService.getTemplates().subscribe({
       next: (templates) => {
-        this.certTemplates = templates.map(t => ({
-          ...t,
-          imageUrl: `${this.sanitizeImageUrl(t.imageUrl)}?t=${Date.now()}`
-        }));
-        
+        this.certTemplates = templates;
         if (this.certTemplates.length > 0) {
           const frontTemplate = this.certTemplates.find(t => t.pageType === 'front');
           if (frontTemplate) {
@@ -279,21 +158,21 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           { 
             id: 1, 
             name: "Frontal Sin Firma",
-            imageUrl: `assets/fallback-front.jpg?t=${Date.now()}`,
+            imageUrl: `assets/fallback-front.jpg`,
             pageType: 'front',
             hasSignature: false
           },
           { 
             id: 2, 
             name: "Frontal Con Firma",
-            imageUrl: `assets/fallback-front-signed.jpg?t=${Date.now()}`,
+            imageUrl: `assets/fallback-front-signed.jpg`,
             pageType: 'front',
             hasSignature: true
           },
           { 
             id: 3, 
             name: "Trasera",
-            imageUrl: `assets/fallback-back.jpg?t=${Date.now()}`,
+            imageUrl: `assets/fallback-back.jpg`,
             pageType: 'back',
             hasSignature: false
           }
@@ -339,7 +218,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       next: (students) => {
         if (students && students.length > 0) {
           this.certificados = students;
-          this.handleGenerateItems();
         }
       },
       error: (err) => {
@@ -382,8 +260,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           iIdIdentidad: 1,
           identidadCodigo: "DNI",
           identidad: "LIBRETA ELECTORAL",
-          fechaFormat: "28/02/2025",
-          tipo: "certificado"
+          fechaFormat: "28/02/2025"
         }];
       }
     });
@@ -413,22 +290,20 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     return this.certTemplates.find(t => t.pageType === pageId) || null;
   }
 
-  private clearFilePondFiles(): void {
-    try {
-      const fileInput = this.signaturePondElement.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-      if (this.signaturePondComponent && typeof (this.signaturePondComponent as any).removeFiles === 'function') {
-        (this.signaturePondComponent as any).removeFiles();
-      }
-    } catch (error) {
-      console.error('Error limpiando FilePond:', error);
+  getStudentDataForZone(zoneLabel: string): string {
+    const student = this.certificados[0];
+    if (!student) return '';
+    
+    switch(zoneLabel.toLowerCase()) {
+      case 'nombre': 
+        return `${student.nombre} ${student.apellido}`;
+      case 'curso': 
+        return student.curso;
+      case 'horas lectivas': 
+        return `${student.ihrlectiva} horas lectivas`;
+      default: 
+        return '';
     }
-  }
-
-  hasDroppedItems(): boolean {
-    return Object.keys(this.currentPageState.droppedItems).length > 0;
   }
 
   private async updateCertificateSize(): Promise<void> {
@@ -455,101 +330,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  handleGenerateItems(): void {
-    if (!this.certificados[0]) return;
-  
-    const certificado = this.certificados[0];
-    const items: GeneratedItem[] = [
-      { 
-        id: 'nombre', 
-        text: `${certificado.nombre} ${certificado.apellido}`.trim(), 
-        type: 'text',
-        color: 'black'
-      },
-      { 
-        id: 'curso', 
-        text: certificado.curso, 
-        type: 'text',
-        color: 'black'
-      },
-      { 
-        id: 'horas', 
-        text: `${certificado.ihrlectiva || 0} horas lectivas`, 
-        type: 'text',
-        color: 'black'
-      }
-    ];
-  
-    this.signatures.forEach((sig, index) => {
-      items.push({ 
-        id: `firma-${index}`, 
-        text: sig.label,  // Aquí se usa solo el texto (label) de la firma
-        type: 'signature',
-        signatureIndex: index
-      });
-    });
-  
-    this.generatedItems = [...items];
-    this.cdr.detectChanges();
-  }
-
-  removeSignature(index: number): void {
-    this.signatures = this.signatures.filter((_, i) => i !== index);
-    
-    Object.keys(this.pageStates).forEach(pageId => {
-      const page = this.pageStates[pageId as 'front' | 'back'];
-      const updatedDroppedItems = { ...page.droppedItems };
-      
-      Object.entries(updatedDroppedItems).forEach(([key, item]) => {
-        if (item.type === 'signature') {
-          if (item.signatureIndex === index) {
-            delete updatedDroppedItems[key];
-          } else if (item.signatureIndex! > index) {
-            updatedDroppedItems[key] = {
-              ...item,
-              signatureIndex: item.signatureIndex! - 1
-            };
-          }
-        }
-      });
-      
-      page.droppedItems = updatedDroppedItems;
-    });
-    
-    this.handleGenerateItems();
-    this.cdr.detectChanges();
-  }
-
-  getSignatureUrl(index?: number): string | null {
-    if (typeof index !== 'number' || !this.signatures[index]) return null;
-    return this.signatures[index].dataURL;
-  }
-
-  getDroppedItem(zoneLabel: string): DroppedItem | null {
-    return this.currentPageState.droppedItems[zoneLabel] || null;
-  }
-
-  handleDrop(zoneLabel: string, item: GeneratedItem): void {
-
-    this.currentPageState.droppedItems = {
-      ...this.currentPageState.droppedItems,
-      [zoneLabel]: {
-        ...item,
-        pageId: this.currentPageId
-      }
-    };
-    this.cdr.detectChanges();
-  }
-
-  startDraggingItem(event: MouseEvent, item: GeneratedItem): void {
-    event.preventDefault();
-
-    this.draggingItem = item;
-    this.dragStartX = event.clientX;
-    this.dragStartY = event.clientY;
-    document.body.style.cursor = 'grabbing';
-  }
-
   startDraggingZone(event: MouseEvent, zone: DropZone): void {
     event.preventDefault();
     this.draggingZone = zone;
@@ -569,46 +349,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
       this.handleDropZoneMove(this.draggingZone.id, newX, newY);
     }
-    
-    if (this.draggingItem) {
-      const certRect = this.certificateRef.nativeElement.getBoundingClientRect();
-      const scale = this.zoomLevel;
-      
-      for (const zone of this.currentPageState.dropZones) {
-        const zoneX = (zone.position.x * scale) + certRect.left;
-        const zoneY = (zone.position.y * scale) + certRect.top;
-        const zoneWidth = 150 * scale;
-        const zoneHeight = 40 * scale;
-        
-        if (
-          event.clientX >= zoneX && 
-          event.clientX <= zoneX + zoneWidth &&
-          event.clientY >= zoneY && 
-          event.clientY <= zoneY + zoneHeight
-        ) {
-          this.dragOverZone = zone.label;
-          break;
-        } else {
-          this.dragOverZone = null;
-        }
-      }
-    }
   }
 
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(event: MouseEvent): void {
-    if (this.draggingItem && this.dragOverZone) {
-      this.handleDrop(this.dragOverZone, this.draggingItem);
-    }
-    
-    this.draggingItem = null;
     this.draggingZone = null;
-    this.dragOverZone = null;
     document.body.style.cursor = 'default';
-  }
-
-  isDraggedOver(zoneLabel: string): boolean {
-    return this.dragOverZone === zoneLabel;
   }
 
   handleDropZoneMove(id: number, x: number, y: number): void {
@@ -616,38 +362,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       zone.id === id ? { ...zone, position: { x, y } } : zone
     );
     this.cdr.detectChanges();
-  }
-
-  handleFileUpload(fileItems: any[]): void {
-    if (fileItems && fileItems.length > 0) {
-      const fileItem = fileItems[0];
-      const file = fileItem.file;
-      
-      if (!file) return;
-      
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        if (!e.target?.result) return;
-  
-        const newSignature: Signature = {
-          id: Date.now(),
-          file: file,
-          dataURL: e.target.result as string,
-          label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
-        };
-  
-        this.signatures = [...this.signatures, newSignature];
-        this.newSignatureLabel = "";
-        this.clearFilePondFiles();
-        
-        // Regenerar los ítems incluyendo la nueva firma
-        this.handleGenerateItems();
-        this.cdr.detectChanges();
-      };
-      
-      reader.readAsDataURL(file);
-    }
   }
 
   async handleExportPDF(): Promise<void> {
@@ -666,12 +380,13 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     try {
       await this.renderPageToPDF(doc, 'front');
       
-      if (this.certificados[0]?.tipo === 'diplomado') {
+      const backTemplate = this.getTemplateForPage('back');
+      if (backTemplate) {
         doc.addPage();
         await this.renderPageToPDF(doc, 'back');
       }
 
-      const filename = this.certificados[0]?.tipo === 'diplomado' ? 'diplomado.pdf' : 'certificado.pdf';
+      const filename = backTemplate ? 'diplomado.pdf' : 'certificado.pdf';
       doc.save(filename);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -709,10 +424,16 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     });
   }
 
+  toggleZoneVisibility(id: number): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === id);
+    if (zone) {
+      zone.hidden = !zone.hidden;
+      this.cdr.detectChanges();
+    }
+  }
+
   private async renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): Promise<void> {
-    const template = pageId === 'front' 
-      ? this.getTemplateForPage('front') 
-      : this.getTemplateForPage('back');
+    const template = this.getTemplateForPage(pageId);
   
     if (!template?.imageUrl) {
       console.error('Template not found for page:', pageId);
@@ -734,7 +455,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       ctx.drawImage(pageImage, 0, 0, canvas.width, canvas.height);
 
       const pageState = this.pageStates[pageId];
-      if (Object.keys(pageState.droppedItems).length > 0) {
+      if (pageState.dropZones.length > 0) {
         await this.addItemsToCanvas(ctx, pageId);
       }
 
@@ -759,71 +480,19 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   private async addItemsToCanvas(ctx: CanvasRenderingContext2D, pageId: 'front' | 'back'): Promise<void> {
     const pageState = this.pageStates[pageId];
-    
-    for (const [zoneLabel, item] of Object.entries(pageState.droppedItems)) {
-      const zone = pageState.dropZones.find(z => z.label === zoneLabel);
-      if (!zone) continue;
-  
-      const xPos = zone.position.x;
-      const yPos = zone.position.y + 30;
-  
-      if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
-        const signature = this.signatures[item.signatureIndex];
-        if (signature) {
-          await new Promise<void>((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-              ctx.drawImage(img, xPos, yPos, 150, 75);
-              resolve();
-            };
-            img.onerror = reject;
-            img.src = signature.dataURL;
-          });
-        }
-      } else {
-        ctx.font = '24px Arial';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = item.color === 'white' ? '#ffffff' : '#000000';
-        ctx.fillText(item.text, xPos, yPos);
+    ctx.font = '24px Arial';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#000000';
+
+    for (const zone of pageState.dropZones) {
+      if (!zone.hidden) { // Solo procesar zonas visibles
+        const text = this.getStudentDataForZone(zone.label);
+        ctx.fillText(text, zone.position.x, zone.position.y + 30);
       }
     }
   }
-  
 
-  handleAddDropZone(): void {
-    if (this.newDropZoneLabel.trim()) {
-      const newDropZone: DropZone = {
-        id: Date.now(),
-        label: this.newDropZoneLabel,
-        position: { x: 100, y: 100 },
-        pageId: this.currentPageId
-      };
-      
-      this.currentPageState.dropZones = [...this.currentPageState.dropZones, newDropZone];
-      this.newDropZoneLabel = "";
-      this.isAddingDropZone = false;
-      this.cdr.detectChanges();
-    }
-  }
-
-  handleRemoveDropZone(id: number): void {
-    const zoneToRemove = this.currentPageState.dropZones.find(zone => zone.id === id);
-    if (zoneToRemove) {
-      const { [zoneToRemove.label]: _, ...updatedDroppedItems } = this.currentPageState.droppedItems;
-      this.currentPageState.droppedItems = updatedDroppedItems;
-    }
-
-    this.currentPageState.dropZones = this.currentPageState.dropZones.filter(zone => zone.id !== id);
-
-    if (this.currentPageState.selectedElement && 
-        this.currentPageState.selectedElement.type === 'dropZone' && 
-        this.currentPageState.selectedElement.id === id) {
-      this.currentPageState.selectedElement = null;
-    }
-    this.cdr.detectChanges();
-  }
-
-  handleSelectElement(type: 'dropZone' | 'item', id: number | string): void {
+  handleSelectElement(type: 'dropZone', id: number): void {
     this.currentPageState.selectedElement = { type, id, pageId: this.currentPageId };
     this.cdr.detectChanges();
   }
@@ -865,51 +534,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   selectTemplate(cert: CertTemplate): void {
     if (cert.pageType === this.currentPageId) {
-      this.selectedCert = {
-        ...cert,
-        imageUrl: `${cert.imageUrl}?t=${Date.now()}`
-      };
-      
-      this.preloadTemplateImage(this.selectedCert.imageUrl);
-      this.handleGenerateItems();
+      this.selectedCert = cert;
+      this.preloadTemplateImage(cert.imageUrl);
     }
-  }
-
-  isItemDroppedInZone(zoneLabel: string): boolean {
-    return !!this.currentPageState.droppedItems[zoneLabel];
-  }
-
-  handleZoomIn(): void {
-    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 2);
-    this.cdr.detectChanges();
-  }
-
-  handleZoomOut(): void {
-    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
-    this.cdr.detectChanges();
-  }
-
-  changeTextColor(newColor: 'black' | 'white'): void {
-    if (!this.currentPageState.selectedElement || this.currentPageState.selectedElement.type !== 'item') return;
-    
-    const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
-    if (item && item.type === 'text') {
-      item.color = newColor;
-      this.textColor = newColor;
-      
-      Object.keys(this.currentPageState.droppedItems).forEach(zoneLabel => {
-        if (this.currentPageState.droppedItems[zoneLabel].id === item.id) {
-          this.currentPageState.droppedItems[zoneLabel].color = newColor;
-        }
-      });
-      this.cdr.detectChanges();
-    }
-  }
-
-  selectedElementIsText(): boolean {
-    if (!this.currentPageState.selectedElement || this.currentPageState.selectedElement.type !== 'item') return false;
-    const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
-    return item ? item.type === 'text' : false;
   }
 
   showFrontTemplate(): void {
@@ -932,5 +559,15 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   
   getCurrentTemplate(): CertTemplate | null {
     return this.getTemplateForPage(this.currentPageId);
+  }
+
+  handleZoomIn(): void {
+    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 2);
+    this.cdr.detectChanges();
+  }
+
+  handleZoomOut(): void {
+    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
+    this.cdr.detectChanges();
   }
 }

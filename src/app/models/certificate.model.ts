@@ -45,7 +45,6 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
-  tipo: 'certificado' | 'diplomado';
 }
 
 export interface DropZone {
@@ -56,6 +55,8 @@ export interface DropZone {
     y: number;
   };
   pageId: 'front' | 'back';
+  hidden?: boolean; // Nueva propiedad
+
 }
 
 export interface DroppedItem {
@@ -67,20 +68,7 @@ export interface DroppedItem {
   pageId?: 'front' | 'back';
 }
 
-export interface GeneratedItem {
-  id: string;
-  text: string;
-  type: 'text' | 'signature';
-  color?: string;
-  signatureIndex?: number;
-}
 
-export interface Signature {
-  id: number;
-  file: File;
-  dataURL: string;
-  label: string;
-}
 
 export interface CertSize {
   width: number;
