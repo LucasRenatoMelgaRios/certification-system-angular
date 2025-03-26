@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, HostListener, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
@@ -32,7 +32,7 @@ registerPlugin(FilePondPluginFileValidateType);
     FilePondModule, 
     LucideAngularModule
   ],
-  providers: [CertificateService], // Añade esta línea
+  providers: [CertificateService],
   templateUrl: './certification-module.component.html',
   styles: [`
     .signatures-list {
@@ -160,6 +160,13 @@ registerPlugin(FilePondPluginFileValidateType);
       background-color: #fff;
       border-color: #666;
     }
+    .cert-template-preview img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      background: white;
+    }
   `]
 })
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
@@ -187,6 +194,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   dragOffsetX = 0;
   dragOffsetY = 0;
   dragOverZone: string | null = null;
+  templateImageLoaded = false;
+  currentTemplateImage: HTMLImageElement | null = null;
 
   pageStates: PageStates = {
     front: {
@@ -232,19 +241,34 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   };
 
-  constructor(private certificateService: CertificateService) {}
+  constructor(
+    private certificateService: CertificateService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadTemplates();
     this.loadStudentData();
   }
 
-  private loadTemplates(): void {
+  private sanitizeImageUrl(url: string): string {
+    return url;
+  }
+
+  private async loadTemplates(): Promise<void> {
     this.certificateService.getTemplates().subscribe({
       next: (templates) => {
-        this.certTemplates = templates;
+        this.certTemplates = templates.map(t => ({
+          ...t,
+          imageUrl: `${this.sanitizeImageUrl(t.imageUrl)}?t=${Date.now()}`
+        }));
+        
         if (this.certTemplates.length > 0) {
-          this.selectedCert = this.certTemplates[0];
+          const frontTemplate = this.certTemplates.find(t => t.pageType === 'front');
+          if (frontTemplate) {
+            this.selectedCert = frontTemplate;
+            this.preloadTemplateImage(frontTemplate.imageUrl);
+          }
         }
       },
       error: (err) => {
@@ -252,21 +276,59 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         this.certTemplates = [
           { 
             id: 1, 
-            name: "Certificado Básico (Frontal)",
-            imageUrl: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
-            pageType: 'front'
+            name: "Frontal Sin Firma",
+            imageUrl: `assets/fallback-front.jpg?t=${Date.now()}`,
+            pageType: 'front',
+            hasSignature: false
           },
           { 
             id: 2, 
-            name: "Certificado Profesional (Trasero)",
-            imageUrl: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3",
-            pageType: 'back'
+            name: "Frontal Con Firma",
+            imageUrl: `assets/fallback-front-signed.jpg?t=${Date.now()}`,
+            pageType: 'front',
+            hasSignature: true
+          },
+          { 
+            id: 3, 
+            name: "Trasera",
+            imageUrl: `assets/fallback-back.jpg?t=${Date.now()}`,
+            pageType: 'back',
+            hasSignature: false
           }
         ];
+        
         if (this.certTemplates.length > 0) {
-          this.selectedCert = this.certTemplates[0];
+          const frontTemplate = this.certTemplates.find(t => t.pageType === 'front');
+          if (frontTemplate) {
+            this.selectedCert = frontTemplate;
+            this.preloadTemplateImage(frontTemplate.imageUrl);
+          }
         }
       }
+    });
+  }
+
+  private preloadTemplateImage(imageUrl: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.templateImageLoaded = false;
+      if (this.currentTemplateImage) {
+        this.currentTemplateImage.onload = null;
+      }
+      
+      this.currentTemplateImage = new Image();
+      this.currentTemplateImage.crossOrigin = 'Anonymous';
+      
+      this.currentTemplateImage.onload = () => {
+        this.certSize = {
+          width: this.currentTemplateImage?.naturalWidth || 1123,
+          height: this.currentTemplateImage?.naturalHeight || 794
+        };
+        this.templateImageLoaded = true;
+        this.cdr.detectChanges();
+        resolve();
+      };
+      
+      this.currentTemplateImage.src = imageUrl;
     });
   }
 
@@ -329,11 +391,23 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     this.updateCertificateSize();
   }
 
+  get frontTemplates(): CertTemplate[] {
+    return this.certTemplates
+      .filter(t => t.pageType === 'front')
+      .sort((a, b) => {
+        if (a.hasSignature === b.hasSignature) return 0;
+        return a.hasSignature ? 1 : -1;
+      });
+  }
+
   get currentPageState(): PageState {
     return this.pageStates[this.currentPageId];
   }
 
   getTemplateForPage(pageId: 'front' | 'back'): CertTemplate | null {
+    if (this.selectedCert?.pageType === pageId) {
+      return this.selectedCert;
+    }
     return this.certTemplates.find(t => t.pageType === pageId) || null;
   }
 
@@ -355,16 +429,27 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     return Object.keys(this.currentPageState.droppedItems).length > 0;
   }
 
-  updateCertificateSize(): void {
+  private async updateCertificateSize(): Promise<void> {
     if (this.selectedCert?.imageUrl) {
-      const img = new Image();
-      img.src = this.selectedCert.imageUrl;
-      img.onload = () => {
-        this.certSize = { 
-          width: img.naturalWidth || 1123, 
-          height: img.naturalHeight || 794 
-        };
-      };
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            this.certSize = {
+              width: img.naturalWidth || 1123,
+              height: img.naturalHeight || 794
+            };
+            this.cdr.detectChanges();
+            resolve();
+          };
+          img.onerror = reject;
+          img.src = this.selectedCert!.imageUrl;
+        });
+      } catch (error) {
+        console.error('Error al cargar la imagen del certificado:', error);
+        this.certSize = { width: 1123, height: 794 };
+        this.cdr.detectChanges();
+      }
     }
   }
 
@@ -393,14 +478,16 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       }
     ];
   
-    this.signatures.forEach((sig, index) => {
-      items.push({ 
-        id: `firma-${index}`, 
-        text: sig.label, 
-        type: 'signature',
-        signatureIndex: index
+    if (this.selectedCert?.hasSignature) {
+      this.signatures.forEach((sig, index) => {
+        items.push({ 
+          id: `firma-${index}`, 
+          text: sig.label, 
+          type: 'signature',
+          signatureIndex: index
+        });
       });
-    });
+    }
   
     this.generatedItems = items;
   }
@@ -438,6 +525,11 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   handleDrop(zoneLabel: string, item: GeneratedItem): void {
+    if (item.type === 'signature' && !this.selectedCert?.hasSignature) {
+      console.warn('Esta plantilla no acepta firmas');
+      return;
+    }
+
     this.currentPageState.droppedItems = {
       ...this.currentPageState.droppedItems,
       [zoneLabel]: {
@@ -449,6 +541,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   startDraggingItem(event: MouseEvent, item: GeneratedItem): void {
     event.preventDefault();
+    if (item.type === 'signature' && !this.selectedCert?.hasSignature) {
+      return;
+    }
     this.draggingItem = item;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
@@ -533,38 +628,150 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`,
           id: Date.now()
         });
+        this.handleGenerateItems();
       };
       
       reader.readAsDataURL(file);
     }
   }
 
-  handleExportPDF(): void {
-    if (!this.certificateRef?.nativeElement || this.certSize.width === 0 || this.certSize.height === 0) return;
+  async handleExportPDF(): Promise<void> {
+    if (!this.certificateRef?.nativeElement) {
+      console.error('Error: Certificate elements not ready');
+      return;
+    }
 
     const doc = new jsPDF({
       orientation: "landscape",
       unit: "px",
-      format: [this.certSize.width, this.certSize.height]
+      format: [this.certSize.width, this.certSize.height],
+      compress: true
     });
 
-    this.renderPageToPDF(doc, 'front');
-    
-    if (this.certificados[0]?.tipo === 'diplomado') {
-      doc.addPage();
-      this.renderPageToPDF(doc, 'back');
-    }
+    try {
+      await this.renderPageToPDF(doc, 'front');
+      
+      if (this.certificados[0]?.tipo === 'diplomado') {
+        doc.addPage();
+        await this.renderPageToPDF(doc, 'back');
+      }
 
-    const filename = this.certificados[0]?.tipo === 'diplomado' ? 'diplomado.pdf' : 'certificado.pdf';
-    doc.save(filename);
+      const filename = this.certificados[0]?.tipo === 'diplomado' ? 'diplomado.pdf' : 'certificado.pdf';
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   }
 
-  private renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): void {
-    const template = this.getTemplateForPage(pageId);
-    if (template?.imageUrl) {
-      doc.addImage(template.imageUrl, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
+  private loadImageAsBase64(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        }
+        resolve(canvas.toDataURL('image/jpeg', 1.0));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = url;
+    });
+  }
+
+  private loadTemplateImage(imageUrl: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+  }
+
+  private async renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): Promise<void> {
+    const template = pageId === 'front' 
+      ? this.getTemplateForPage('front') 
+      : this.getTemplateForPage('back');
+  
+    if (!template?.imageUrl) {
+      console.error('Template not found for page:', pageId);
+      return;
     }
-    this.addItemsToPDF(doc, pageId);
+  
+    try {
+      const pageImage = await this.loadTemplateImage(template.imageUrl);
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = this.certSize.width;
+      canvas.height = this.certSize.height;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(pageImage, 0, 0, canvas.width, canvas.height);
+
+      const pageState = this.pageStates[pageId];
+      if (Object.keys(pageState.droppedItems).length > 0) {
+        await this.addItemsToCanvas(ctx, pageId);
+      }
+
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      doc.addImage(
+        imgData,
+        'JPEG',
+        0,
+        0,
+        this.certSize.width,
+        this.certSize.height,
+        undefined,
+        'FAST'
+      );
+
+    } catch (error) {
+      console.error('Error rendering PDF page:', error);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, this.certSize.width, this.certSize.height, 'F');
+    }
+  }
+
+  private async addItemsToCanvas(ctx: CanvasRenderingContext2D, pageId: 'front' | 'back'): Promise<void> {
+    const pageState = this.pageStates[pageId];
+    
+    for (const [zoneLabel, item] of Object.entries(pageState.droppedItems)) {
+      const zone = pageState.dropZones.find(z => z.label === zoneLabel);
+      if (!zone) continue;
+
+      const xPos = zone.position.x;
+      const yPos = zone.position.y + 30;
+
+      if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
+        const signature = this.signatures[item.signatureIndex];
+        if (signature && this.selectedCert?.hasSignature) {
+          await new Promise<void>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, xPos, yPos, 150, 75);
+              resolve();
+            };
+            img.onerror = reject;
+            img.src = signature.dataURL;
+          });
+        }
+      } else {
+        ctx.font = '24px Arial';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = item.color === 'white' ? '#ffffff' : '#000000';
+        ctx.fillText(item.text, xPos, yPos);
+      }
+    }
   }
 
   private addItemsToPDF(doc: jsPDF, pageId: 'front' | 'back'): void {
@@ -572,25 +779,27 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     
     Object.entries(pageState.droppedItems).forEach(([zoneLabel, item]) => {
       const zone = pageState.dropZones.find(z => z.label === zoneLabel);
-      if (zone) {
-        const xPos = zone.position.x;
-        const yPos = zone.position.y + 30;
-        doc.setFontSize(24);
+      if (!zone) return;
+
+      const xPos = zone.position.x;
+      const yPos = zone.position.y + 30;
+
+      doc.setFontSize(24);
   
-        if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
-          const signature = this.signatures[item.signatureIndex];
-          if (signature) {
-            try {
-              doc.addImage(signature.dataURL, 'PNG', xPos, yPos, 150, 75);
-            } catch (error) {
-              console.error("Error adding signature to PDF:", error);
-            }
+      if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
+        const signature = this.signatures[item.signatureIndex];
+        if (signature && this.selectedCert?.hasSignature) {
+          try {
+            doc.addImage(signature.dataURL, 'PNG', xPos, yPos, 150, 75);
+          } catch (error) {
+            console.error("Error al agregar firma al PDF:", error);
           }
-        } else {
-          doc.setFillColor(item.color === 'white' ? '#ffffff' : '#000000');
-          doc.setTextColor(item.color === 'white' ? '#ffffff' : '#000000');
-          doc.text(item.text, xPos, yPos);
         }
+      } else {
+        const color = item.color === 'white' ? '#ffffff' : '#000000';
+        doc.setFillColor(color);
+        doc.setTextColor(color);
+        doc.text(item.text, xPos, yPos);
       }
     });
   }
@@ -633,29 +842,40 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
     if (!this.currentPageState.selectedElement) return;
-
+  
     const step = event.shiftKey ? 10 : 5;
     let newX, newY;
-
+  
     if (this.currentPageState.selectedElement.type === 'dropZone') {
       const zone = this.currentPageState.dropZones.find(z => z.id === this.currentPageState.selectedElement?.id);
       if (!zone) return;
-
+  
       newX = zone.position.x;
       newY = zone.position.y;
-
+  
       if (event.key === "ArrowUp") newY -= step;
       if (event.key === "ArrowDown") newY += step;
       if (event.key === "ArrowLeft") newX -= step;
       if (event.key === "ArrowRight") newX += step;
-
+  
       this.handleDropZoneMove(zone.id, newX, newY);
+    } else if (this.currentPageState.selectedElement.type === 'item') {
+      const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
+      if (item) {
+      }
     }
   }
 
   selectTemplate(cert: CertTemplate): void {
-    this.selectedCert = cert;
-    this.updateCertificateSize();
+    if (cert.pageType === this.currentPageId) {
+      this.selectedCert = {
+        ...cert,
+        imageUrl: `${cert.imageUrl}?t=${Date.now()}`
+      };
+      
+      this.preloadTemplateImage(this.selectedCert.imageUrl);
+      this.handleGenerateItems();
+    }
   }
 
   isItemDroppedInZone(zoneLabel: string): boolean {
@@ -694,12 +914,20 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   showFrontTemplate(): void {
     this.currentPageId = 'front';
-    this.selectedCert = this.getTemplateForPage('front');
+    if (!this.selectedCert || this.selectedCert.pageType !== 'front') {
+      const frontTemplate = this.frontTemplates[0];
+      if (frontTemplate) {
+        this.selectTemplate(frontTemplate);
+      }
+    }
   }
   
   showBackTemplate(): void {
     this.currentPageId = 'back';
-    this.selectedCert = this.getTemplateForPage('back');
+    const backTemplate = this.getTemplateForPage('back');
+    if (backTemplate) {
+      this.selectTemplate(backTemplate);
+    }
   }
   
   getCurrentTemplate(): CertTemplate | null {

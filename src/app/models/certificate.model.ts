@@ -2,7 +2,8 @@ export interface CertTemplate {
   id: number;
   name: string;
   imageUrl: string;
-  pageType?: 'front' | 'back'; // Nueva propiedad para identificar tipo de página
+  pageType: 'front' | 'back';
+  hasSignature: boolean;
 }
 
 export interface Certificado {
@@ -44,32 +45,34 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
-  tipo: "certificado" | "diplomado";
+  tipo: 'certificado' | 'diplomado';
 }
 
 export interface DropZone {
   id: number;
   label: string;
-  position: { x: number; y: number };
-  pageId?: 'front' | 'back'; // Nueva propiedad para asociar zona a página
+  position: {
+    x: number;
+    y: number;
+  };
+  pageId: 'front' | 'back';
 }
 
 export interface DroppedItem {
   id: string;
   text: string;
   type: 'text' | 'signature';
-  signatureIndex?: number;
   color?: string;
-  pageId?: 'front' | 'back'; // Nueva propiedad para asociar item a página
+  signatureIndex?: number;
+  pageId?: 'front' | 'back';
 }
 
 export interface GeneratedItem {
   id: string;
   text: string;
   type: 'text' | 'signature';
-  signatureIndex?: number;
   color?: string;
-  // No necesita pageId ya que son elementos compartidos
+  signatureIndex?: number;
 }
 
 export interface Signature {
@@ -84,21 +87,17 @@ export interface CertSize {
   height: number;
 }
 
-export interface SelectedElement {
-  type: 'dropZone' | 'item';
-  id: number | string;
-  pageId?: 'front' | 'back'; // Nueva propiedad para contexto de selección
-}
-
-// Nueva interfaz para el estado por página
 export interface PageState {
   dropZones: DropZone[];
   droppedItems: { [key: string]: DroppedItem };
-  selectedElement?: SelectedElement | null;
+  selectedElement: {
+    type: 'dropZone' | 'item';
+    id: number | string;
+    pageId: 'front' | 'back';
+  } | null;
 }
 
-// Tipo para mapeo de estados de página
-export type PageStates = {
+export interface PageStates {
   front: PageState;
   back: PageState;
-};
+}

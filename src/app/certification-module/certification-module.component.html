@@ -95,6 +95,17 @@
     </div>
 
     <div class="certificate-preview" #certificateContainerRef>
+      <!-- Controles de zoom -->
+      <div class="zoom-controls-container">
+        <button class="zoom-button" (click)="handleZoomOut()" [disabled]="zoomLevel <= 0.25">
+          -
+        </button>
+        <span class="zoom-level-display">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+        <button class="zoom-button" (click)="handleZoomIn()" [disabled]="zoomLevel >= 2">
+          +
+        </button>
+      </div>
+
       <h3>{{ certificados[0].tipo === 'diplomado' ? 'DIPLOMADO' : 'CERTIFICADO' }}</h3>
       <div *ngIf="certificados[0]?.tipo === 'diplomado'" class="template-view-controls">
         <button 
@@ -110,8 +121,22 @@
           Vista Trasera
         </button>
       </div>
+      <div *ngIf="currentPageId === 'front'" class="front-options">
+        <label *ngFor="let frontTemplate of frontTemplates">
+          <input 
+            type="radio" 
+            name="frontTemplate" 
+            [value]="frontTemplate.id" 
+            [checked]="selectedCert?.id === frontTemplate.id"
+            (change)="selectTemplate(frontTemplate)"
+          >
+          {{ frontTemplate.name }}
+        </label>
+      </div>
       <div 
         class="certificate-content" 
+        [style.transform]="'scale(' + zoomLevel + ')'"
+        [style.transform-origin]="'0 0'"
         [style.width.px]="certSize.width"
         [style.height.px]="certSize.height"
       >
