@@ -233,9 +233,11 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           dataURL: e.target?.result as string,
           label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
         };
-        this.signatures.push(newSignature);
+        this.signatures = [...this.signatures, newSignature];
         this.newSignatureLabel = "";
         this.clearFilePondFiles();
+        this.handleGenerateItems();
+        this.cdr.detectChanges();
       };
       reader.readAsDataURL(file);
     }
@@ -489,30 +491,35 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       });
     }
   
-    this.generatedItems = items;
+    this.generatedItems = [...items];
+    this.cdr.detectChanges();
   }
 
   removeSignature(index: number): void {
-    this.signatures.splice(index, 1);
+    this.signatures = this.signatures.filter((_, i) => i !== index);
     
     Object.keys(this.pageStates).forEach(pageId => {
       const page = this.pageStates[pageId as 'front' | 'back'];
+      const updatedDroppedItems = { ...page.droppedItems };
       
-      Object.entries(page.droppedItems).forEach(([key, item]) => {
-        if (item.type === 'signature' && item.signatureIndex === index) {
-          delete page.droppedItems[key];
-        } else if (item.type === 'signature' && item.signatureIndex! > index) {
-            page.droppedItems[key] = {
+      Object.entries(updatedDroppedItems).forEach(([key, item]) => {
+        if (item.type === 'signature') {
+          if (item.signatureIndex === index) {
+            delete updatedDroppedItems[key];
+          } else if (item.signatureIndex! > index) {
+            updatedDroppedItems[key] = {
               ...item,
               signatureIndex: item.signatureIndex! - 1
             };
+          }
         }
       });
+      
+      page.droppedItems = updatedDroppedItems;
     });
     
-    if (this.generatedItems.length > 0) {
-      this.handleGenerateItems();
-    }
+    this.handleGenerateItems();
+    this.cdr.detectChanges();
   }
 
   getSignatureUrl(index?: number): string | null {
@@ -537,6 +544,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         pageId: this.currentPageId
       }
     };
+    this.cdr.detectChanges();
   }
 
   startDraggingItem(event: MouseEvent, item: GeneratedItem): void {
@@ -553,27 +561,32 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   startDraggingZone(event: MouseEvent, zone: DropZone): void {
     event.preventDefault();
     this.draggingZone = zone;
-    this.dragOffsetX = event.clientX - zone.position.x;
-    this.dragOffsetY = event.clientY - zone.position.y;
+    const rect = this.certificateRef.nativeElement.getBoundingClientRect();
+    const scale = this.zoomLevel;
+    this.dragOffsetX = (event.clientX - rect.left) / scale - zone.position.x;
+    this.dragOffsetY = (event.clientY - rect.top) / scale - zone.position.y;
     document.body.style.cursor = 'grabbing';
   }
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {
     if (this.draggingZone) {
-      const newX = event.clientX - this.dragOffsetX;
-      const newY = event.clientY - this.dragOffsetY;
+      const rect = this.certificateRef.nativeElement.getBoundingClientRect();
+      const scale = this.zoomLevel;
+      const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
+      const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
       this.handleDropZoneMove(this.draggingZone.id, newX, newY);
     }
     
     if (this.draggingItem) {
       const certRect = this.certificateRef.nativeElement.getBoundingClientRect();
+      const scale = this.zoomLevel;
       
       for (const zone of this.currentPageState.dropZones) {
-        const zoneX = zone.position.x + certRect.left;
-        const zoneY = zone.position.y + certRect.top;
-        const zoneWidth = 150;
-        const zoneHeight = 40;
+        const zoneX = (zone.position.x * scale) + certRect.left;
+        const zoneY = (zone.position.y * scale) + certRect.top;
+        const zoneWidth = 150 * scale;
+        const zoneHeight = 40 * scale;
         
         if (
           event.clientX >= zoneX && 
@@ -610,6 +623,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     this.currentPageState.dropZones = this.currentPageState.dropZones.map(zone =>
       zone.id === id ? { ...zone, position: { x, y } } : zone
     );
+    this.cdr.detectChanges();
   }
 
   handleFileUpload(fileItems: any[]): void {
@@ -622,13 +636,15 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       const reader = new FileReader();
       
       reader.onload = (e) => {
-        this.signatures.push({
+        const newSignature: Signature = {
+          id: Date.now(),
           file: file,
           dataURL: e.target?.result as string,
-          label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`,
-          id: Date.now()
-        });
+          label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
+        };
+        this.signatures = [...this.signatures, newSignature];
         this.handleGenerateItems();
+        this.cdr.detectChanges();
       };
       
       reader.readAsDataURL(file);
@@ -774,36 +790,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private addItemsToPDF(doc: jsPDF, pageId: 'front' | 'back'): void {
-    const pageState = this.pageStates[pageId];
-    
-    Object.entries(pageState.droppedItems).forEach(([zoneLabel, item]) => {
-      const zone = pageState.dropZones.find(z => z.label === zoneLabel);
-      if (!zone) return;
-
-      const xPos = zone.position.x;
-      const yPos = zone.position.y + 30;
-
-      doc.setFontSize(24);
-  
-      if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
-        const signature = this.signatures[item.signatureIndex];
-        if (signature && this.selectedCert?.hasSignature) {
-          try {
-            doc.addImage(signature.dataURL, 'PNG', xPos, yPos, 150, 75);
-          } catch (error) {
-            console.error("Error al agregar firma al PDF:", error);
-          }
-        }
-      } else {
-        const color = item.color === 'white' ? '#ffffff' : '#000000';
-        doc.setFillColor(color);
-        doc.setTextColor(color);
-        doc.text(item.text, xPos, yPos);
-      }
-    });
-  }
-
   handleAddDropZone(): void {
     if (this.newDropZoneLabel.trim()) {
       const newDropZone: DropZone = {
@@ -816,6 +802,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       this.currentPageState.dropZones = [...this.currentPageState.dropZones, newDropZone];
       this.newDropZoneLabel = "";
       this.isAddingDropZone = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -833,17 +820,19 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         this.currentPageState.selectedElement.id === id) {
       this.currentPageState.selectedElement = null;
     }
+    this.cdr.detectChanges();
   }
 
   handleSelectElement(type: 'dropZone' | 'item', id: number | string): void {
     this.currentPageState.selectedElement = { type, id, pageId: this.currentPageId };
+    this.cdr.detectChanges();
   }
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
     if (!this.currentPageState.selectedElement) return;
   
-    const step = event.shiftKey ? 10 : 5;
+    const step = event.shiftKey ? 10 :5;
     let newX, newY;
   
     if (this.currentPageState.selectedElement.type === 'dropZone') {
@@ -853,16 +842,24 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       newX = zone.position.x;
       newY = zone.position.y;
   
-      if (event.key === "ArrowUp") newY -= step;
-      if (event.key === "ArrowDown") newY += step;
-      if (event.key === "ArrowLeft") newX -= step;
-      if (event.key === "ArrowRight") newX += step;
+      switch (event.key) {
+        case "ArrowUp":
+          newY -= step / this.zoomLevel;
+          break;
+        case "ArrowDown":
+          newY += step / this.zoomLevel;
+          break;
+        case "ArrowLeft":
+          newX -= step / this.zoomLevel;
+          break;
+        case "ArrowRight":
+          newX += step / this.zoomLevel;
+          break;
+        default:
+          return;
+      }
   
       this.handleDropZoneMove(zone.id, newX, newY);
-    } else if (this.currentPageState.selectedElement.type === 'item') {
-      const item = this.generatedItems.find(i => i.id === this.currentPageState.selectedElement?.id);
-      if (item) {
-      }
     }
   }
 
@@ -884,10 +881,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   handleZoomIn(): void {
     this.zoomLevel = Math.min(this.zoomLevel + 0.1, 2);
+    this.cdr.detectChanges();
   }
 
   handleZoomOut(): void {
     this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
+    this.cdr.detectChanges();
   }
 
   changeTextColor(newColor: 'black' | 'white'): void {
@@ -903,6 +902,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
           this.currentPageState.droppedItems[zoneLabel].color = newColor;
         }
       });
+      this.cdr.detectChanges();
     }
   }
 
