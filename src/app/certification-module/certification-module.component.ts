@@ -45,7 +45,7 @@ registerPlugin(FilePondPluginFileValidateType);
       border: 1px solid #ddd;
       border-radius: 4px;
       padding: 10px;
-      width: calc(50% - 5px);
+      width: calc(100% - 5px);
     }
     .signature-header {
       display: flex;
