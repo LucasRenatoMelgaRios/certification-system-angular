@@ -480,16 +480,14 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       }
     ];
   
-    if (this.selectedCert?.hasSignature) {
-      this.signatures.forEach((sig, index) => {
-        items.push({ 
-          id: `firma-${index}`, 
-          text: sig.label, 
-          type: 'signature',
-          signatureIndex: index
-        });
+    this.signatures.forEach((sig, index) => {
+      items.push({ 
+        id: `firma-${index}`, 
+        text: sig.label,  // Aquí se usa solo el texto (label) de la firma
+        type: 'signature',
+        signatureIndex: index
       });
-    }
+    });
   
     this.generatedItems = [...items];
     this.cdr.detectChanges();
@@ -532,10 +530,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   handleDrop(zoneLabel: string, item: GeneratedItem): void {
-    if (item.type === 'signature' && !this.selectedCert?.hasSignature) {
-      console.warn('Esta plantilla no acepta firmas');
-      return;
-    }
 
     this.currentPageState.droppedItems = {
       ...this.currentPageState.droppedItems,
@@ -549,9 +543,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   startDraggingItem(event: MouseEvent, item: GeneratedItem): void {
     event.preventDefault();
-    if (item.type === 'signature' && !this.selectedCert?.hasSignature) {
-      return;
-    }
+
     this.draggingItem = item;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
@@ -636,13 +628,20 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       const reader = new FileReader();
       
       reader.onload = (e) => {
+        if (!e.target?.result) return;
+  
         const newSignature: Signature = {
           id: Date.now(),
           file: file,
-          dataURL: e.target?.result as string,
+          dataURL: e.target.result as string,
           label: this.newSignatureLabel || `Firma ${this.signatures.length + 1}`
         };
+  
         this.signatures = [...this.signatures, newSignature];
+        this.newSignatureLabel = "";
+        this.clearFilePondFiles();
+        
+        // Regenerar los ítems incluyendo la nueva firma
         this.handleGenerateItems();
         this.cdr.detectChanges();
       };
@@ -764,13 +763,13 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     for (const [zoneLabel, item] of Object.entries(pageState.droppedItems)) {
       const zone = pageState.dropZones.find(z => z.label === zoneLabel);
       if (!zone) continue;
-
+  
       const xPos = zone.position.x;
       const yPos = zone.position.y + 30;
-
+  
       if (item.type === 'signature' && typeof item.signatureIndex === 'number') {
         const signature = this.signatures[item.signatureIndex];
-        if (signature && this.selectedCert?.hasSignature) {
+        if (signature) {
           await new Promise<void>((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -789,6 +788,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       }
     }
   }
+  
 
   handleAddDropZone(): void {
     if (this.newDropZoneLabel.trim()) {

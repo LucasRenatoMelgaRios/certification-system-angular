@@ -212,8 +212,9 @@
           [style.fontWeight]="'bold'"
           tabindex="0"
         >
-          {{ item.type === 'signature' ? 'Firma ' + (item.signatureIndex! + 1) : item.text }}
-        </div>
+
+        {{ item.type === 'signature' ? 'Firma: ' + item.text : item.text }}
+      </div>
         <p *ngIf="generatedItems.length === 0" class="no-items">
           Genera los items para arrastrar al certificado
         </p>
