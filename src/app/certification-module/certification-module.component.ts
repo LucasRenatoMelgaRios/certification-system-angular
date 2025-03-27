@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { CertificateService } from '../services/certificate.service';
+
 import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, CERTIFICATE_LAYOUTS, AVAILABLE_FONTS 
 } from '../models/certificate.model';
 
@@ -64,47 +65,66 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
+  
   private initializePageStates(): void {
     const layout = CERTIFICATE_LAYOUTS[this.certificateType];
     const savedConfig = this.loadSavedConfiguration();
     
+    // Create deep clone function for proper state management
+    const cloneState = (state: PageState): PageState => ({
+      ...state,
+      dropZones: state.dropZones.map(zone => ({
+        ...zone,
+        position: {...zone.position}
+      }))
+    });
+  
     if (savedConfig) {
+      // Process front page
+      const frontDropZones = layout.front.map(defaultZone => {
+        const savedZone = savedConfig.front.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
+        
+        return {
+          ...defaultZone,
+          position: savedZone?.position || defaultZone.position,
+          hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
+          textColor: savedZone?.textColor || defaultZone.textColor || 'black',
+          fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial'
+        };
+      });
+  
+      // Process back page
+      const backDropZones = layout.back.map(defaultZone => {
+        const savedZone = savedConfig.back.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
+        
+        return {
+          ...defaultZone,
+          position: savedZone?.position || defaultZone.position,
+          hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
+          textColor: savedZone?.textColor || defaultZone.textColor || 'black',
+          fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial'
+        };
+      });
+  
       this.pageStates = {
         front: {
-          dropZones: layout.front.map(defaultZone => {
-            const savedZone = savedConfig.front.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
-            return savedZone ? { 
-              ...defaultZone,
-              position: savedZone.position || defaultZone.position,
-              hidden: savedZone.hidden !== undefined ? savedZone.hidden : defaultZone.hidden,
-              textColor: savedZone.textColor || defaultZone.textColor || 'black',
-              fontFamily: savedZone.fontFamily || defaultZone.fontFamily || 'Arial' // Corrección clave aquí
-            } : defaultZone;
-          }),
+          dropZones: frontDropZones,
           droppedItems: {},
           selectedElement: null
         },
         back: {
-          dropZones: layout.back.map(defaultZone => {
-            const savedZone = savedConfig.back.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
-            return savedZone ? { 
-              ...defaultZone,
-              position: savedZone.position || defaultZone.position,
-              hidden: savedZone.hidden !== undefined ? savedZone.hidden : defaultZone.hidden,
-              textColor: savedZone.textColor || defaultZone.textColor || 'black',
-              fontFamily: savedZone.fontFamily || defaultZone.fontFamily || 'Arial' // Corrección clave aquí
-            } : defaultZone;
-          }),
+          dropZones: backDropZones,
           droppedItems: {},
           selectedElement: null
         }
       };
     } else {
+      // Initialize with default values if no saved config exists
       this.pageStates = {
         front: {
           dropZones: layout.front.map(z => ({
             ...z,
-            hidden: z.hidden || false,
+            hidden: z.hidden ?? false,
             textColor: z.textColor || 'black',
             fontFamily: z.fontFamily || 'Arial'
           })),
@@ -114,7 +134,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         back: {
           dropZones: layout.back.map(z => ({
             ...z,
-            hidden: z.hidden || false,
+            hidden: z.hidden ?? false,
             textColor: z.textColor || 'black',
             fontFamily: z.fontFamily || 'Arial'
           })),
@@ -123,7 +143,21 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         }
       };
     }
+  
+    // Force UI update after initialization
+    setTimeout(() => {
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    }, 0);
   }
+  onFontChange(zoneId: number, font: string): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone) {
+      zone.fontFamily = font;
+      this.cdr.markForCheck();
+    }
+  }
+  
   private loadSavedConfiguration(): PageStates | null {
     try {
       const savedConfig = localStorage.getItem('certificate-config');

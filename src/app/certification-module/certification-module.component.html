@@ -2,12 +2,14 @@
   <div class="cert-header">
     <h2>PLANTILLAS DE CERTIFICADOS</h2>
     <div class="cert-selection">
-      <div *ngFor="let cert of certTemplates" 
-           class="cert-template" 
-           [class.active]="selectedCert?.id === cert.id" 
-           (click)="selectTemplate(cert)">
+      <div
+        *ngFor="let cert of certTemplates"
+        class="cert-template"
+        [class.active]="selectedCert?.id === cert.id"
+        (click)="selectTemplate(cert)"
+      >
         <div class="cert-template-preview">
-          <img [src]="cert.imageUrl" [alt]="cert.name">
+          <img [src]="cert.imageUrl" [alt]="cert.name" />
         </div>
         <span>{{ cert.name }}</span>
       </div>
@@ -19,43 +21,60 @@
         <div class="certificate-type-selector">
           <h3>Tipo de Documento</h3>
           <div class="type-options">
-            <button [class.active]="certificateType === 'curso'" 
-                    (click)="changeCertificateType('curso')">
+            <button
+              [class.active]="certificateType === 'curso'"
+              (click)="changeCertificateType('curso')"
+            >
               Certificado
             </button>
-            <button [class.active]="certificateType === 'diplomado'" 
-                    (click)="changeCertificateType('diplomado')">
+            <button
+              [class.active]="certificateType === 'diplomado'"
+              (click)="changeCertificateType('diplomado')"
+            >
               Diplomado
             </button>
-            <button [class.active]="certificateType === 'constancia'" 
-                    (click)="changeCertificateType('constancia')">
+            <button
+              [class.active]="certificateType === 'constancia'"
+              (click)="changeCertificateType('constancia')"
+            >
               Constancia
             </button>
           </div>
         </div>
 
-        <div class="signature-controls" *ngIf="certificateType !== 'constancia'">
+        <div
+          class="signature-controls"
+          *ngIf="certificateType !== 'constancia'"
+        >
           <h3>Tipo de Plantilla</h3>
           <div class="signature-options">
-            <button [class.active]="!currentTemplateHasSignature"
-                    (click)="toggleSignature(false)">
+            <button
+              [class.active]="!currentTemplateHasSignature"
+              (click)="toggleSignature(false)"
+            >
               Sin Firma
             </button>
-            <button [class.active]="currentTemplateHasSignature"
-                    (click)="toggleSignature(true)">
+            <button
+              [class.active]="currentTemplateHasSignature"
+              (click)="toggleSignature(true)"
+            >
               Con Firma
             </button>
           </div>
         </div>
 
         <div class="view-controls" *ngIf="certificateType !== 'constancia'">
-          <button (click)="showFrontTemplate()"
-                  [class.active]="currentPageId === 'front'">
+          <button
+            (click)="showFrontTemplate()"
+            [class.active]="currentPageId === 'front'"
+          >
             Vista Frontal
           </button>
-          <button *ngIf="getTemplateForPage('back')"
-                  (click)="showBackTemplate()"
-                  [class.active]="currentPageId === 'back'">
+          <button
+            *ngIf="getTemplateForPage('back')"
+            (click)="showBackTemplate()"
+            [class.active]="currentPageId === 'back'"
+          >
             Vista Trasera
           </button>
         </div>
@@ -68,11 +87,19 @@
         </button>
 
         <div class="zoom-controls">
-          <button class="zoom-button" (click)="handleZoomOut()" [disabled]="zoomLevel <= 0.5">
+          <button
+            class="zoom-button"
+            (click)="handleZoomOut()"
+            [disabled]="zoomLevel <= 0.5"
+          >
             <i class="icon-zoom-out"></i>
           </button>
           <span>{{ (zoomLevel * 100).toFixed(0) }}%</span>
-          <button class="zoom-button" (click)="handleZoomIn()" [disabled]="zoomLevel >= 2">
+          <button
+            class="zoom-button"
+            (click)="handleZoomIn()"
+            [disabled]="zoomLevel >= 2"
+          >
             <i class="icon-zoom-in"></i>
           </button>
         </div>
@@ -80,91 +107,123 @@
 
       <div class="fields-list">
         <h3>Campos Disponibles</h3>
-        <div *ngFor="let zone of currentPageState.dropZones" 
-             class="field-item"
-             [class.hidden]="zone.hidden"
-             [class.selected]="currentPageState.selectedElement?.id === zone.id"
-             (click)="handleSelectElement('dropZone', zone.id)">
-          
+        <div
+          *ngFor="let zone of currentPageState.dropZones"
+          class="field-item"
+          [class.hidden]="zone.hidden"
+          [class.selected]="currentPageState.selectedElement?.id === zone.id"
+          (click)="handleSelectElement('dropZone', zone.id)"
+        >
           <div class="field-header">
             <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
             <div class="field-controls">
-              <button class="control-btn"
-                      (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                      [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
+              <button
+                class="control-btn"
+                (click)="
+                  toggleZoneVisibility(zone.id); $event.stopPropagation()
+                "
+                [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
+              >
                 <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
               </button>
             </div>
           </div>
-      
+
           <div class="field-styling">
             <div class="style-group">
               <label>Color:</label>
-              <button class="color-btn"
-                      [class.active]="zone.textColor === 'black'"
-                      (click)="toggleTextColor(zone.id); $event.stopPropagation()"
-                      [title]="zone.textColor === 'black' ? 'Cambiar a texto blanco' : 'Cambiar a texto negro'">
-                <span class="color-preview" [style.background]="zone.textColor"></span>
-                {{ zone.textColor === 'black' ? 'Negro' : 'Blanco' }}
+              <button
+                class="color-btn"
+                [class.active]="zone.textColor === 'black'"
+                (click)="toggleTextColor(zone.id); $event.stopPropagation()"
+                [title]="
+                  zone.textColor === 'black'
+                    ? 'Cambiar a texto blanco'
+                    : 'Cambiar a texto negro'
+                "
+              >
+                <span
+                  class="color-preview"
+                  [style.background]="zone.textColor"
+                ></span>
+                {{ zone.textColor === "black" ? "Negro" : "Blanco" }}
               </button>
             </div>
-            
+
             <div class="style-group">
               <label>Fuente:</label>
-              <select class="font-select"
-                      [value]="zone.fontFamily"
-                      (change)="changeFontFamily(zone.id, $event)"
-                      (click)="$event.stopPropagation()">
-                <option *ngFor="let font of availableFonts" [value]="font">{{ font }}</option>
+              <select
+                class="font-select"
+                [ngModel]="zone.fontFamily"
+                (ngModelChange)="changeFontFamily(zone.id, $event)"
+                [(ngModel)]="zone.fontFamily"
+                (ngModelChange)="onFontChange(zone.id, $event)"
+                (click)="$event.stopPropagation()"
+              >
+                <option *ngFor="let font of availableFonts" [value]="font">
+                  {{ font }}
+                </option>
               </select>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="certificate-preview" #certificateContainerRef>
+      <div class="certificate-container">
+        <div
+          class="certificate-content"
+          [style.transform]="'scale(' + zoomLevel + ')'"
+          [style.width.px]="certSize.width"
+          [style.height.px]="certSize.height"
+        >
+          <div
+            class="certificate-background"
+            #certificateRef
+            [style.backgroundImage]="
+              'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'
+            "
+          ></div>
 
+          <div
+            *ngFor="let zone of currentPageState.dropZones"
+            class="drop-zone"
+            [class.selected]="currentPageState.selectedElement?.id === zone.id"
+            [class.hidden]="zone.hidden"
+            [style.left.px]="zone.position.x"
+            [style.top.px]="zone.position.y"
+            [style.color]="zone.textColor"
+            [style.fontFamily]="zone.fontFamily"
+            (mousedown)="startDraggingZone($event, zone)"
+            (click)="handleSelectElement('dropZone', zone.id)"
+          >
+            <div class="zone-content">
+              <ng-container *ngIf="zone.type === 'dates'; else textField">
+                <div
+                  *ngFor="
+                    let line of getStudentDataForZone(zone.fieldKey).split('\n')
+                  "
+                >
+                  {{ line }}
+                </div>
+              </ng-container>
 
-  </div>
-  <div class="certificate-preview" #certificateContainerRef>
-    <div class="certificate-container">
-      <div class="certificate-content" 
-           [style.transform]="'scale(' + zoomLevel + ')'"
-           [style.width.px]="certSize.width"
-           [style.height.px]="certSize.height">
-        
-        <div class="certificate-background" 
-             #certificateRef
-             [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'">
-        </div>
-        
-        <div *ngFor="let zone of currentPageState.dropZones"
-             class="drop-zone"
-             [class.selected]="currentPageState.selectedElement?.id === zone.id"
-             [class.hidden]="zone.hidden"
-             [style.left.px]="zone.position.x"
-             [style.top.px]="zone.position.y"
-             [style.color]="zone.textColor"
-             [style.fontFamily]="zone.fontFamily"
-             (mousedown)="startDraggingZone($event, zone)"
-             (click)="handleSelectElement('dropZone', zone.id)">
-          
-          <div class="zone-content">
-            <ng-container *ngIf="zone.type === 'dates'; else textField">
-              <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
-                {{ line }}
-              </div>
-            </ng-container>
-            
-            <ng-template #textField>
-              {{ getStudentDataForZone(zone.fieldKey) }}
-            </ng-template>
-          </div>
+              <ng-template #textField>
+                {{ getStudentDataForZone(zone.fieldKey) }}
+              </ng-template>
+            </div>
 
-          <div class="drop-zone-controls">
-            <button (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                    class="visibility-toggle"
-                    [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
-              <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-            </button>
+            <div class="drop-zone-controls">
+              <button
+                (click)="
+                  toggleZoneVisibility(zone.id); $event.stopPropagation()
+                "
+                class="visibility-toggle"
+                [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
+              >
+                <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
