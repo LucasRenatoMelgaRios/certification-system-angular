@@ -212,7 +212,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   dragStartY = 0;
   dragOffsetX = 0;
   dragOffsetY = 0;
-  certificateType: 'curso' | 'diplomado' = 'curso';
+  certificateType: 'curso' | 'diplomado' | 'constancia' = 'curso';
   pageStates: PageStates = {
     front: { dropZones: [], droppedItems: {}, selectedElement: null },
     back: { dropZones: [], droppedItems: {}, selectedElement: null }
@@ -237,8 +237,15 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   private determineCertificateType(): void {
     const student = this.certificados[0];
-    this.certificateType = student?.curso?.toLowerCase().includes('diplomado') ? 'diplomado' : 'curso';
+    if (student?.curso?.toLowerCase().includes('diplomado')) {
+      this.certificateType = 'diplomado';
+    } else if (student?.curso?.toLowerCase().includes('constancia')) {
+      this.certificateType = 'constancia';
+    } else {
+      this.certificateType = 'curso';
+    }
   }
+
 
   private initializePageStates(): void {
     const layout = CERTIFICATE_LAYOUTS[this.certificateType];
@@ -450,7 +457,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
     switch(fieldKey) {
       case 'descripcion':
+        if (this.certificateType === 'constancia') {
+          return student.nombre || '';
+        }
         return `Inicio: ${student.initFormat}\nFin: ${student.finFormat}\n${student.descripcion || ''}`;
+      case 'descripcion2':
+        return `Fecha: ${student.emisionFormat}\nHoras lectivas: ${student.ihrlectiva}`;
       case 'ihrlectiva':
         return `${student.ihrlectiva} horas lectivas`;
       case 'nombreCompleto':
@@ -459,26 +471,30 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         return student.codigo.split('-')[0];
       case 'codigoCertificado':
         return student.iIdCertificado.toString();
+      case 'nota':
+        return student.nota || 'Aprobado';
       default:
         return student[fieldKey as keyof Certificado]?.toString() || '';
     }
   }
-
   getFieldLabel(fieldKey: string): string {
     const labels: {[key: string]: string} = {
       'nombre': 'Nombre completo',
       'apellido': 'Apellidos',
       'curso': 'Nombre del curso',
-      'descripcion': 'Descripción y fechas',
+      'descripcion': this.certificateType === 'constancia' ? 'Nombre' : 'Descripción y fechas',
+      'descripcion2': 'Fecha y horas lectivas',
       'ihrlectiva': 'Horas lectivas',
       'emisionFormat': 'Fecha de emisión',
       'fechaFormat': 'Fecha de expedición',
       'dni': 'DNI',
       'codigo': 'Código del curso',
-      'iIdCertificado': 'Código de certificado'
+      'iIdCertificado': 'Código de certificado',
+      'nota': 'Calificación'
     };
     return labels[fieldKey] || fieldKey;
   }
+
 
   startDraggingZone(event: MouseEvent, zone: DropZone): void {
     event.preventDefault();
@@ -646,10 +662,13 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  changeCertificateType(type: 'curso' | 'diplomado'): void {
+  changeCertificateType(type: 'curso' | 'diplomado' | 'constancia'): void {
     if (this.certificateType !== type) {
       this.certificateType = type;
       this.initializePageStates();
+      if (type === 'constancia') {
+        this.currentPageId = 'front';
+      }
       this.cdr.detectChanges();
     }
   }

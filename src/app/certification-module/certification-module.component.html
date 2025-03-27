@@ -2,11 +2,10 @@
   <div class="cert-header">
     <h2>PLANTILLAS DE CERTIFICADOS</h2>
     <div class="cert-selection">
-      <div 
-        *ngFor="let cert of certTemplates" 
-        class="cert-template"
-        [class.active]="selectedCert?.id === cert.id"
-        (click)="selectTemplate(cert)">
+      <div *ngFor="let cert of certTemplates" 
+           class="cert-template" 
+           [class.active]="selectedCert?.id === cert.id" 
+           (click)="selectTemplate(cert)">
         <div class="cert-template-preview">
           <img [src]="cert.imageUrl" [alt]="cert.name">
         </div>
@@ -20,36 +19,36 @@
         <div class="certificate-type-selector">
           <h3>Tipo de Documento</h3>
           <div class="type-options">
-            <button 
-              [class.active]="certificateType === 'curso'"
-              (click)="changeCertificateType('curso')">
+            <button [class.active]="certificateType === 'curso'" 
+                    (click)="changeCertificateType('curso')">
               Certificado
             </button>
-            <button 
-              [class.active]="certificateType === 'diplomado'"
-              (click)="changeCertificateType('diplomado')">
+            <button [class.active]="certificateType === 'diplomado'" 
+                    (click)="changeCertificateType('diplomado')">
               Diplomado
+            </button>
+            <button [class.active]="certificateType === 'constancia'" 
+                    (click)="changeCertificateType('constancia')">
+              Constancia
             </button>
           </div>
         </div>
 
-        <div class="signature-controls">
+        <div class="signature-controls" *ngIf="certificateType !== 'constancia'">
           <h3>Tipo de Plantilla</h3>
           <div class="signature-options">
-            <button 
-              [class.active]="!currentTemplateHasSignature"
-              (click)="toggleSignature(false)">
+            <button [class.active]="!currentTemplateHasSignature"
+                    (click)="toggleSignature(false)">
               Sin Firma
             </button>
-            <button 
-              [class.active]="currentTemplateHasSignature"
-              (click)="toggleSignature(true)">
+            <button [class.active]="currentTemplateHasSignature"
+                    (click)="toggleSignature(true)">
               Con Firma
             </button>
           </div>
         </div>
 
-        <div class="view-controls">
+        <div class="view-controls" *ngIf="certificateType !== 'constancia'">
           <button (click)="showFrontTemplate()"
                   [class.active]="currentPageId === 'front'">
             Vista Frontal
@@ -137,6 +136,4 @@
       </div>
     </div>
   </div>
-
-
 </div>

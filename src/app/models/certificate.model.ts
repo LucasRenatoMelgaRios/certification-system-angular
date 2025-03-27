@@ -45,11 +45,12 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
+  nota?: string;
 }
 
 export interface DropZone {
   id: number;
-  fieldKey: string;  // Cambiado de 'label' a 'fieldKey'
+  fieldKey: string;
   position: {
     x: number;
     y: number;
@@ -58,6 +59,7 @@ export interface DropZone {
   hidden?: boolean;
   type: 'text' | 'dates';
 }
+
 export interface DroppedItem {
   id: string;
   text: string;
@@ -66,8 +68,6 @@ export interface DroppedItem {
   signatureIndex?: number;
   pageId?: 'front' | 'back';
 }
-
-
 
 export interface CertSize {
   width: number;
@@ -126,5 +126,14 @@ export const CERTIFICATE_LAYOUTS: { [key: string]: PageLayout } = {
       { id: 19, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text' },
       { id: 20, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text' }
     ]
+  },
+  constancia: {
+    front: [
+      { id: 21, fieldKey: 'descripcion', position: { x: 50, y: 150 }, pageId: 'front', type: 'text' },
+      { id: 22, fieldKey: 'descripcion2', position: { x: 50, y: 220 }, pageId: 'front', type: 'dates' },
+      { id: 23, fieldKey: 'nota', position: { x: 50, y: 290 }, pageId: 'front', type: 'text' },
+      { id: 24, fieldKey: 'emisionFormat', position: { x: 50, y: 360 }, pageId: 'front', type: 'text' }
+    ],
+    back: []
   }
 };
