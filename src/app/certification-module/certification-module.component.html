@@ -185,6 +185,19 @@
                 <i class="icon-italic">I</i>
               </button>
             </div>
+            <div class="style-group">
+              <label>Tamaño fuente:</label>
+              <input
+                type="number"
+                class="content-edit"
+                [(ngModel)]="zone.fontSize"
+                (ngModelChange)="onContentChange(zone.id)"
+                (click)="$event.stopPropagation()"
+                min="8"
+                max="120"
+                step="1"
+              >
+            </div>
 
             <div class="style-group">
               <label>Fuente:</label>
@@ -233,7 +246,7 @@
             (mousedown)="startDraggingZone($event, zone)"
             (click)="handleSelectElement('dropZone', zone.id)"
           >
-            <div class="zone-content" [style.fontStyle]="zone.isItalic ? 'italic' : 'normal'">
+            <div class="zone-content" [style.fontStyle]="zone.isItalic ? 'italic' : 'normal'" [style.fontSize.px]="zone.fontSize">
               
               <ng-container *ngIf="zone.type === 'dates'; else textField">
                 <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">

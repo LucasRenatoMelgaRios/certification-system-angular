@@ -80,6 +80,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
                 textColor: savedZone?.textColor || defaultZone.textColor || 'black',
                 fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial',
                 isItalic: savedZone?.isItalic ?? defaultZone.isItalic ?? false, // Nuevo campo
+                fontSize: savedZone?.fontSize || defaultZone.fontSize || 52, // Valor por defecto 52
                 customPrefix: savedZone?.customPrefix || '',
                 customSuffix: savedZone?.customSuffix || ''
             };
@@ -159,59 +160,61 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   saveConfiguration(): void {
     try {
-        let allConfigs: Record<string, any> = {};
-        const savedConfig = localStorage.getItem('certificate-config');
-        if (savedConfig) {
-            allConfigs = JSON.parse(savedConfig);
+      let allConfigs: Record<string, any> = {};
+      const savedConfig = localStorage.getItem('certificate-config');
+      if (savedConfig) {
+        allConfigs = JSON.parse(savedConfig);
+      }
+  
+      const configToSave = {
+        front: {
+          ...this.pageStates.front,
+          selectedElement: null,
+          droppedItems: {},
+          dropZones: this.pageStates.front.dropZones.map(zone => ({
+            id: zone.id,
+            fieldKey: zone.fieldKey,
+            position: { x: zone.position.x, y: zone.position.y },
+            type: zone.type,
+            hidden: zone.hidden ?? false,
+            textColor: zone.textColor || 'black',
+            fontFamily: zone.fontFamily || 'Arial',
+            isItalic: zone.isItalic ?? false,
+            fontSize: zone.fontSize || 52, // Guardar el tamaño actual
+            customPrefix: zone.customPrefix || '',
+            customSuffix: zone.customSuffix || ''
+          }))
+        },
+        back: {
+          ...this.pageStates.back,
+          selectedElement: null,
+          droppedItems: {},
+          dropZones: this.pageStates.back.dropZones.map(zone => ({
+            id: zone.id,
+            fieldKey: zone.fieldKey,
+            position: { x: zone.position.x, y: zone.position.y },
+            type: zone.type,
+            hidden: zone.hidden ?? false,
+            textColor: zone.textColor || 'black',
+            fontFamily: zone.fontFamily || 'Arial',
+            isItalic: zone.isItalic ?? false,
+            fontSize: zone.fontSize || 52, // Guardar el tamaño actual
+            customPrefix: zone.customPrefix || '',
+            customSuffix: zone.customSuffix || ''
+          }))
         }
-
-        const configToSave = {
-            front: {
-                ...this.pageStates.front,
-                selectedElement: null,
-                droppedItems: {},
-                dropZones: this.pageStates.front.dropZones.map(zone => ({
-                    id: zone.id,
-                    fieldKey: zone.fieldKey,
-                    position: { x: zone.position.x, y: zone.position.y },
-                    type: zone.type,
-                    hidden: zone.hidden ?? false,
-                    textColor: zone.textColor || 'black',
-                    fontFamily: zone.fontFamily || 'Arial',
-                    isItalic: zone.isItalic ?? false, // Nuevo campo
-                    customPrefix: zone.customPrefix || '',
-                    customSuffix: zone.customSuffix || ''
-                }))
-            },
-            back: {
-                ...this.pageStates.back,
-                selectedElement: null,
-                droppedItems: {},
-                dropZones: this.pageStates.back.dropZones.map(zone => ({
-                    id: zone.id,
-                    fieldKey: zone.fieldKey,
-                    position: { x: zone.position.x, y: zone.position.y },
-                    type: zone.type,
-                    hidden: zone.hidden ?? false,
-                    textColor: zone.textColor || 'black',
-                    fontFamily: zone.fontFamily || 'Arial',
-                    isItalic: zone.isItalic ?? false, // Nuevo campo
-                    customPrefix: zone.customPrefix || '',
-                    customSuffix: zone.customSuffix || ''
-                }))
-            }
-        };
-
-        allConfigs[this.certificateType] = configToSave;
-        localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
-
-        this.showNotification('Configuración guardada exitosamente', 'success');
-        this.cdr.detectChanges();
+      };
+  
+      allConfigs[this.certificateType] = configToSave;
+      localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
+  
+      this.showNotification('Configuración guardada exitosamente', 'success');
+      this.cdr.detectChanges();
     } catch (error) {
-        console.error('Error guardando configuración:', error);
-        this.showNotification('Error al guardar la configuración', 'error');
+      console.error('Error guardando configuración:', error);
+      this.showNotification('Error al guardar la configuración', 'error');
     }
-}
+  }
 
 private showNotification(message: string, type: 'success' | 'error'): void {
     // Implementar tu sistema de notificaciones preferido
@@ -757,76 +760,77 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
     doc: jsPDF, 
     pageId: 'front' | 'back',
     dimensions: { width: number; height: number }
-): Promise<void> {
+  ): Promise<void> {
     if (!this.selectedCert?.imageUrl) {
-        throw new Error(`Template not found for page: ${pageId}`);
+      throw new Error(`Template not found for page: ${pageId}`);
     }
-
+  
     const pageState = this.pageStates[pageId];
-
+  
     try {
-        const canvas = document.createElement('canvas');
-        canvas.width = dimensions.width;
-        canvas.height = dimensions.height;
-        const ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) throw new Error('Could not get canvas context');
+  
+      const templateImage = await this.loadTemplateImage(this.selectedCert.imageUrl);
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
+  
+      for (const zone of pageState.dropZones) {
+        if (zone.hidden) continue;
+  
+        // Usar el fontSize guardado o el valor por defecto (52)
+        const baseFontSize = zone.fontSize || 52;
+        const italiannoMultiplier = 1.2;
+        const fontSize = zone.fontFamily === 'Italianno' 
+          ? baseFontSize * italiannoMultiplier 
+          : baseFontSize;
+  
+        // Aplicar cursiva si está activada
+        const fontStyle = zone.isItalic ? 'italic' : 'normal';
+        ctx.font = `${fontStyle} ${fontSize}px ${zone.fontFamily || 'Arial'}`;
         
-        if (!ctx) throw new Error('Could not get canvas context');
-
-        const templateImage = await this.loadTemplateImage(this.selectedCert.imageUrl);
+        ctx.fillStyle = zone.textColor || '#000000';
+        ctx.textBaseline = 'top';
+  
+        const text = this.getStudentDataForZone(zone.fieldKey);
         
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
-
-        for (const zone of pageState.dropZones) {
-            if (zone.hidden) continue;
-
-            const baseFontSize = 52;
-            const italiannoMultiplier = 1.8;
-            const fontSize = zone.fontFamily === 'Italianno' 
-                ? baseFontSize * italiannoMultiplier 
-                : baseFontSize;
-
-            // Aplicar cursiva si está activada
-            const fontStyle = zone.isItalic ? 'italic' : 'normal'; // Nuevo
-            ctx.font = `${fontStyle} ${fontSize}px ${zone.fontFamily || 'Arial'}`;
-            
-            ctx.fillStyle = zone.textColor || '#000000';
-            ctx.textBaseline = 'top';
-
-            const text = this.getStudentDataForZone(zone.fieldKey);
-            
-            if (zone.type === 'dates') {
-                const lines = text.split('\n');
-                const lineSpacing = zone.fontFamily === 'Italianno' ? 50 : 45;
-                
-                lines.forEach((line, index) => {
-                    ctx.fillText(
-                        line, 
-                        zone.position.x, 
-                        zone.position.y + (index * lineSpacing)
-                    );
-                });
-            } else {
-                ctx.fillText(text, zone.position.x, zone.position.y);
-            }
+        if (zone.type === 'dates') {
+          const lines = text.split('\n');
+          const lineSpacing = fontSize * 1.2; // Espaciado proporcional al tamaño de fuente
+          
+          lines.forEach((line, index) => {
+            ctx.fillText(
+              line, 
+              zone.position.x, 
+              zone.position.y + (index * lineSpacing)
+            );
+          });
+        } else {
+          ctx.fillText(text, zone.position.x, zone.position.y);
         }
-
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        doc.addImage(
-            imgData, 
-            'JPEG', 
-            0, 
-            0, 
-            dimensions.width, 
-            dimensions.height
-        );
-
+      }
+  
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      doc.addImage(
+        imgData, 
+        'JPEG', 
+        0, 
+        0, 
+        dimensions.width, 
+        dimensions.height
+      );
+  
     } catch (error) {
-        console.error('Error rendering PDF page:', error);
-        throw error;
+      console.error('Error rendering PDF page:', error);
+      throw error;
     }
-}
+  }
   handleSelectElement(type: 'dropZone', id: number): void {
     this.currentPageState.selectedElement = {
       type,
