@@ -70,15 +70,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     const layout = CERTIFICATE_LAYOUTS[this.certificateType];
     const savedConfig = this.loadSavedConfiguration();
     
-    // Create deep clone function for proper state management
-    const cloneState = (state: PageState): PageState => ({
-      ...state,
-      dropZones: state.dropZones.map(zone => ({
-        ...zone,
-        position: {...zone.position}
-      }))
-    });
-  
     if (savedConfig) {
       // Process front page
       const frontDropZones = layout.front.map(defaultZone => {
@@ -119,7 +110,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         }
       };
     } else {
-      // Initialize with default values if no saved config exists
       this.pageStates = {
         front: {
           dropZones: layout.front.map(z => ({
@@ -144,12 +134,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       };
     }
   
-    // Force UI update after initialization
     setTimeout(() => {
       this.cdr.markForCheck();
       this.cdr.detectChanges();
     }, 0);
   }
+
   onFontChange(zoneId: number, font: string): void {
     const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
     if (zone) {
@@ -386,6 +376,17 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     });
   }
 
+  private loadTemplateImage(imageUrl: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+  }
+
+
   private async preloadTemplateImage(imageUrl: string): Promise<void> {
     return new Promise((resolve) => {
       const img = new Image();
@@ -441,9 +442,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         if (this.certificateType === 'constancia') {
           return student.nombre || '';
         }
-        return `Inicio: ${student.initFormat}\nFin: ${student.finFormat}\n${student.descripcion || ''}`;
+        return `${this.fechaAFormatoLegible(student.initFormat)}\n al ${this.fechaAFormatoLegible(student.finFormat)}\n${student.descripcion || ''}`;
       case 'descripcion2':
-        return `Fecha: ${student.emisionFormat}\nHoras lectivas: ${student.ihrlectiva}`;
+        return `Fecha: ${this.fechaAFormatoLegible(student.emisionFormat)}\nHoras lectivas: ${student.ihrlectiva}`;
       case 'ihrlectiva':
         return `${student.ihrlectiva} horas lectivas`;
       case 'nombreCompleto':
@@ -454,10 +455,41 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         return student.iIdCertificado.toString();
       case 'nota':
         return student.nota || 'Aprobado';
+      case 'emisionFormat':
+        return this.fechaAFormatoLegible(student.emisionFormat);
+      case 'fechaFormat':
+        return this.fechaAFormatoLegible(student.fechaFormat);
       default:
         return student[fieldKey as keyof Certificado]?.toString() || '';
     }
   }
+
+  private fechaAFormatoLegible(fechaStr: string): string {
+    try {
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(fechaStr)) {
+        console.warn('Formato de fecha no válido:', fechaStr);
+        return fechaStr;
+      }
+
+      const [dia, mes, año] = fechaStr.split("/").map(Number);
+      
+      if (mes < 1 || mes > 12 || dia < 1 || dia > 31) {
+        console.warn('Fecha inválida:', fechaStr);
+        return fechaStr;
+      }
+
+      const meses = [
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+      ];
+
+      return `${dia} de ${meses[mes - 1]} de ${año}`;
+    } catch (error) {
+      console.error('Error al convertir fecha:', error);
+      return fechaStr;
+    }
+  }
+
 
   getFieldLabel(fieldKey: string): string {
     const labels: {[key: string]: string} = {
@@ -515,13 +547,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   async handleExportPDF(): Promise<void> {
     if (!this.certificateRef?.nativeElement) return;
 
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "px",
-      format: [this.certSize.width, this.certSize.height],
-      compress: true
-    });
-
     try {
       // Store current state
       const currentState = {
@@ -530,24 +555,51 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         selectedCert: this.selectedCert
       };
 
-      // Render front page
-      const frontTemplate = this.frontTemplates.find(t => t.hasSignature === this.currentTemplateHasSignature);
+      // Get templates for both pages
+      const frontTemplate = this.certTemplates.find(t => 
+        t.pageType === 'front' && t.hasSignature === this.currentTemplateHasSignature
+      );
+      const backTemplate = this.certTemplates.find(t => t.pageType === 'back');
+
       if (!frontTemplate) throw new Error('Front template not found');
-      
+
+      // Load front page image and get dimensions
+      const frontImage = await this.loadTemplateImage(frontTemplate.imageUrl);
+      const frontDimensions = {
+        width: frontImage.naturalWidth,
+        height: frontImage.naturalHeight
+      };
+
+      // Initialize PDF with front page dimensions
+      const doc = new jsPDF({
+        orientation: frontDimensions.width > frontDimensions.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [frontDimensions.width, frontDimensions.height],
+        compress: true
+      });
+
+      // Render front page
       this.currentPageId = 'front';
       this.selectedCert = frontTemplate;
-      await this.renderPageToPDF(doc, 'front');
+      await this.renderPageToPDF(doc, 'front', frontDimensions);
 
-      // Render back page if exists
-      const backTemplate = this.certTemplates.find(t => t.pageType === 'back');
+      // If back template exists, render it with its own dimensions
       if (backTemplate) {
-        doc.addPage([this.certSize.width, this.certSize.height], 'landscape');
+        const backImage = await this.loadTemplateImage(backTemplate.imageUrl);
+        const backDimensions = {
+          width: backImage.naturalWidth,
+          height: backImage.naturalHeight
+        };
+
+        // Add new page with back template dimensions
+        doc.addPage([backDimensions.width, backDimensions.height]);
+        
         this.currentPageId = 'back';
         this.selectedCert = backTemplate;
-        await this.renderPageToPDF(doc, 'back');
+        await this.renderPageToPDF(doc, 'back', backDimensions);
       }
 
-      // Restore state
+      // Restore original state
       this.currentPageId = currentState.pageId;
       this.currentTemplateHasSignature = currentState.hasSignature;
       this.selectedCert = currentState.selectedCert;
@@ -565,7 +617,11 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
 
-  private async renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): Promise<void> {
+  private async renderPageToPDF(
+    doc: jsPDF, 
+    pageId: 'front' | 'back',
+    dimensions: { width: number; height: number }
+  ): Promise<void> {
     if (!this.selectedCert?.imageUrl) {
       throw new Error(`Template not found for page: ${pageId}`);
     }
@@ -574,8 +630,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = this.certSize.width;
-      canvas.height = this.certSize.height;
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
       const ctx = canvas.getContext('2d');
       
       if (!ctx) throw new Error('Could not get canvas context');
@@ -592,8 +648,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       for (const zone of pageState.dropZones) {
         if (zone.hidden) continue;
 
-        // Configure text rendering with zone-specific styles
-        ctx.font = `24px ${zone.fontFamily || 'Arial'}`;
+        // Aumentar tamaño de fuente para Italianno
+        const fontSize = zone.fontFamily === 'Italianno' ? 32 : 24;
+        ctx.font = `${fontSize}px ${zone.fontFamily || 'Arial'}`;
         ctx.fillStyle = zone.textColor || '#000000';
         ctx.textBaseline = 'top';
 
@@ -601,7 +658,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         if (zone.type === 'dates') {
           const lines = text.split('\n');
           lines.forEach((line, index) => {
-            ctx.fillText(line, zone.position.x, zone.position.y + (index * 30));
+            // Ajustar espaciado si es Italianno
+            const lineSpacing = zone.fontFamily === 'Italianno' ? 35 : 30;
+            ctx.fillText(line, zone.position.x, zone.position.y + (index * lineSpacing));
           });
         } else {
           ctx.fillText(text, zone.position.x, zone.position.y);
@@ -610,23 +669,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
       // Add the rendered canvas to PDF
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      doc.addImage(imgData, 'JPEG', 0, 0, this.certSize.width, this.certSize.height);
+      doc.addImage(imgData, 'JPEG', 0, 0, dimensions.width, dimensions.height);
 
     } catch (error) {
       console.error('Error rendering PDF page:', error);
       throw error;
     }
-  }
-
-
-  private loadTemplateImage(imageUrl: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = imageUrl;
-    });
   }
 
   handleSelectElement(type: 'dropZone', id: number): void {

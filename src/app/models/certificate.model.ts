@@ -4,6 +4,10 @@ export interface CertTemplate {
   imageUrl: string;
   pageType: 'front' | 'back';
   hasSignature: boolean;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
 }
 
 export interface Certificado {
@@ -58,8 +62,8 @@ export interface DropZone {
   pageId: 'front' | 'back';
   hidden?: boolean;
   type: 'text' | 'dates';
-  textColor: string;  // Added property
-  fontFamily: string; // Added property
+  textColor: string;
+  fontFamily: string;
 }
 
 export interface DroppedItem {

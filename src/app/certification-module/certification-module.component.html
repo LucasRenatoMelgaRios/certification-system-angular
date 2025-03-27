@@ -174,8 +174,8 @@
         <div
           class="certificate-content"
           [style.transform]="'scale(' + zoomLevel + ')'"
-          [style.width.px]="certSize.width"
-          [style.height.px]="certSize.height"
+          [style.width.px]="getCurrentTemplate()?.dimensions?.width || certSize.width"
+          [style.height.px]="getCurrentTemplate()?.dimensions?.height || certSize.height"
         >
           <div
             class="certificate-background"
@@ -183,6 +183,8 @@
             [style.backgroundImage]="
               'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'
             "
+            [style.width.px]="getCurrentTemplate()?.dimensions?.width || certSize.width"
+            [style.height.px]="getCurrentTemplate()?.dimensions?.height || certSize.height"
           ></div>
 
           <div

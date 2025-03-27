@@ -1,4 +1,7 @@
-  /* Base styles */
+@import url('https://fonts.cdnfonts.com/css/paddingtonsc');
+
+ 
+ /* Base styles */
   * {
     box-sizing: border-box;
     margin: 0;
@@ -359,6 +362,9 @@
     min-height: 40px;
     cursor: move;
     transition: all 0.1s ease;
+    font-size: 24px; /* Igualar tamaño de fuente de la preview al PDF */
+    white-space: pre-wrap; /* Mantener formato de saltos de línea */
+
   }
 
   .drop-zone.selected {
