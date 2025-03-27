@@ -71,75 +71,68 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     const savedConfig = this.loadSavedConfiguration();
     
     if (savedConfig) {
-      // Process front page
-      const frontDropZones = layout.front.map(defaultZone => {
-        const savedZone = savedConfig.front.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
-        
-        return {
-          ...defaultZone,
-          position: savedZone?.position || defaultZone.position,
-          hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
-          textColor: savedZone?.textColor || defaultZone.textColor || 'black',
-          fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial'
+        // Procesar con configuración guardada
+        const processZones = (zones: any[], defaultZones: any[]) => {
+            return defaultZones.map(defaultZone => {
+                const savedZone = zones.find((z: any) => z.fieldKey === defaultZone.fieldKey);
+                return {
+                    ...defaultZone,
+                    position: savedZone?.position || defaultZone.position,
+                    hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
+                    textColor: savedZone?.textColor || defaultZone.textColor || 'black',
+                    fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial',
+                    customPrefix: savedZone?.customPrefix || '',
+                    customSuffix: savedZone?.customSuffix || ''
+                };
+            });
         };
-      });
-  
-      // Process back page
-      const backDropZones = layout.back.map(defaultZone => {
-        const savedZone = savedConfig.back.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
-        
-        return {
-          ...defaultZone,
-          position: savedZone?.position || defaultZone.position,
-          hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
-          textColor: savedZone?.textColor || defaultZone.textColor || 'black',
-          fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial'
-        };
-      });
-  
-      this.pageStates = {
-        front: {
-          dropZones: frontDropZones,
-          droppedItems: {},
-          selectedElement: null
-        },
-        back: {
-          dropZones: backDropZones,
-          droppedItems: {},
-          selectedElement: null
-        }
-      };
-    } else {
-      this.pageStates = {
-        front: {
-          dropZones: layout.front.map(z => ({
-            ...z,
-            hidden: z.hidden ?? false,
-            textColor: z.textColor || 'black',
-            fontFamily: z.fontFamily || 'Arial'
-          })),
-          droppedItems: {},
-          selectedElement: null
-        },
-        back: {
-          dropZones: layout.back.map(z => ({
-            ...z,
-            hidden: z.hidden ?? false,
-            textColor: z.textColor || 'black',
-            fontFamily: z.fontFamily || 'Arial'
-          })),
-          droppedItems: {},
-          selectedElement: null
-        }
-      };
-    }
-  
-    setTimeout(() => {
-      this.cdr.markForCheck();
-      this.cdr.detectChanges();
-    }, 0);
-  }
 
+        this.pageStates = {
+            front: {
+                dropZones: processZones(savedConfig.front.dropZones, layout.front),
+                droppedItems: {},
+                selectedElement: null
+            },
+            back: {
+                dropZones: savedConfig.back ? 
+                    processZones(savedConfig.back.dropZones, layout.back) : 
+                    layout.back.map(z => ({ ...z, customPrefix: '', customSuffix: '' })),
+                droppedItems: {},
+                selectedElement: null
+            }
+        };
+    } else {
+        // Configuración inicial por defecto
+        this.pageStates = {
+            front: {
+                dropZones: layout.front.map(z => ({
+                    ...z,
+                    hidden: z.hidden ?? false,
+                    textColor: z.textColor || 'black',
+                    fontFamily: z.fontFamily || 'Arial',
+                    customPrefix: '',
+                    customSuffix: ''
+                })),
+                droppedItems: {},
+                selectedElement: null
+            },
+            back: {
+                dropZones: layout.back.map(z => ({
+                    ...z,
+                    hidden: z.hidden ?? false,
+                    textColor: z.textColor || 'black',
+                    fontFamily: z.fontFamily || 'Arial',
+                    customPrefix: '',
+                    customSuffix: ''
+                })),
+                droppedItems: {},
+                selectedElement: null
+            }
+        };
+    }
+
+    setTimeout(() => this.cdr.detectChanges(), 0);
+}
   onFontChange(zoneId: number, font: string): void {
     const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
     if (zone) {
@@ -147,6 +140,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       this.cdr.markForCheck();
     }
   }
+
+  
   
   private loadSavedConfiguration(): PageStates | null {
     try {
@@ -163,63 +158,79 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   saveConfiguration(): void {
     try {
-      // Load all existing configurations
-      let allConfigs = {};
-      try {
+        // Cargar todas las configuraciones existentes
+        let allConfigs: Record<string, any> = {};
         const savedConfig = localStorage.getItem('certificate-config');
         if (savedConfig) {
-          allConfigs = JSON.parse(savedConfig);
+            allConfigs = JSON.parse(savedConfig);
         }
-      } catch (error) {
-        console.error('Error loading existing configurations:', error);
-      }
 
-      // Create a copy of the current state without the selectedElement
-      const configToSave = {
-        front: {
-          ...this.pageStates.front,
-          selectedElement: null,
-          droppedItems: {},
-          dropZones: this.pageStates.front.dropZones.map(zone => ({
-            ...zone,
-            position: { ...zone.position },
-            hidden: zone.hidden,
-            textColor: zone.textColor,
-            fontFamily: zone.fontFamily,
-            fieldKey: zone.fieldKey
-            
-          }))
-        },
-        back: {
-          ...this.pageStates.back,
-          selectedElement: null,
-          droppedItems: {},
-          dropZones: this.pageStates.back.dropZones.map(zone => ({
-            ...zone,
-            position: { ...zone.position },
-            hidden: zone.hidden,
-            textColor: zone.textColor,
-            fontFamily: zone.fontFamily,
-            fieldKey: zone.fieldKey
-          }))
-        }
-      };
+        // Crear copia del estado actual para guardar
+        const configToSave = {
+            front: {
+                ...this.pageStates.front,
+                selectedElement: null,
+                droppedItems: {},
+                dropZones: this.pageStates.front.dropZones.map(zone => ({
+                    id: zone.id,
+                    fieldKey: zone.fieldKey,
+                    position: { x: zone.position.x, y: zone.position.y },
+                    type: zone.type,
+                    hidden: zone.hidden ?? false,
+                    textColor: zone.textColor || 'black',
+                    fontFamily: zone.fontFamily || 'Arial',
+                    customPrefix: zone.customPrefix || '',
+                    customSuffix: zone.customSuffix || ''
+                }))
+            },
+            back: {
+                ...this.pageStates.back,
+                selectedElement: null,
+                droppedItems: {},
+                dropZones: this.pageStates.back.dropZones.map(zone => ({
+                    id: zone.id,
+                    fieldKey: zone.fieldKey,
+                    position: { x: zone.position.x, y: zone.position.y },
+                    type: zone.type,
+                    hidden: zone.hidden ?? false,
+                    textColor: zone.textColor || 'black',
+                    fontFamily: zone.fontFamily || 'Arial',
+                    customPrefix: zone.customPrefix || '',
+                    customSuffix: zone.customSuffix || ''
+                }))
+            }
+        };
 
-      // Update the configuration for the current type
-      allConfigs = {
-        ...allConfigs,
-        [this.certificateType]: configToSave
-      };
+        // Actualizar la configuración para el tipo actual
+        allConfigs[this.certificateType] = configToSave;
 
-      // Save all configurations
-      localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
+        // Guardar todas las configuraciones
+        localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
 
-      alert('Configuración guardada exitosamente');
+        // Mostrar feedback
+        this.showNotification('Configuración guardada exitosamente', 'success');
+        this.cdr.detectChanges();
     } catch (error) {
-      console.error('Error saving configuration:', error);
-      alert('Error al guardar la configuración');
+        console.error('Error guardando configuración:', error);
+        this.showNotification('Error al guardar la configuración', 'error');
     }
-  }
+}
+
+private showNotification(message: string, type: 'success' | 'error'): void {
+    // Implementar tu sistema de notificaciones preferido
+    alert(`${type.toUpperCase()}: ${message}`);
+}
+
+// Métodos auxiliares para mostrar mensajes (opcional)
+private showSuccessMessage(message: string): void {
+    // Puedes implementar un toast o alerta bonita aquí
+    alert(message);
+}
+
+private showErrorMessage(message: string): void {
+    // Puedes implementar un toast o alerta de error aquí
+    alert(message);
+}
 
 
   get currentPageState(): PageState {
@@ -252,6 +263,14 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onContentChange(zoneId: number): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone) {
+        // Forzar actualización de la vista
+        this.cdr.markForCheck();
+    }
+}
+  
 
   toggleSignature(hasSignature: boolean): void {
     if (this.currentTemplateHasSignature !== hasSignature) {
@@ -436,33 +455,47 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   getStudentDataForZone(fieldKey: string): string {
     const student = this.certificados[0];
     if (!student) return '';
+    
+    const zone = this.currentPageState.dropZones.find(z => z.fieldKey === fieldKey);
+    const originalValue = this.getOriginalValue(fieldKey, student);
+    
+    // Combinar prefijo + valor original + sufijo, filtrando valores vacíos
+    const parts = [
+        zone?.customPrefix?.trim(),
+        originalValue?.trim(),
+        zone?.customSuffix?.trim()
+    ].filter(part => part && part.length > 0);
+    
+    return parts.join(' ');
+}
 
+private getOriginalValue(fieldKey: string, student: Certificado): string {
     switch(fieldKey) {
-      case 'descripcion':
-        if (this.certificateType === 'constancia') {
-          return student.nombre || '';
-        }
-        return `${this.fechaAFormatoLegible(student.initFormat)}\n al ${this.fechaAFormatoLegible(student.finFormat)}\n${student.descripcion || ''}`;
-      case 'descripcion2':
-        return `Fecha: ${this.fechaAFormatoLegible(student.emisionFormat)}\nHoras lectivas: ${student.ihrlectiva}`;
-      case 'ihrlectiva':
-        return `${student.ihrlectiva} horas lectivas`;
-      case 'nombreCompleto':
-        return `${student.nombre} ${student.apellido}`;
-      case 'codigoCurso':
-        return student.codigo.split('-')[0];
-      case 'codigoCertificado':
-        return student.iIdCertificado.toString();
-      case 'nota':
-        return student.nota || 'Aprobado';
-      case 'emisionFormat':
-        return this.fechaAFormatoLegible(student.emisionFormat);
-      case 'fechaFormat':
-        return this.fechaAFormatoLegible(student.fechaFormat);
-      default:
-        return student[fieldKey as keyof Certificado]?.toString() || '';
+        case 'descripcion':
+            if (this.certificateType === 'constancia') {
+                return student.nombre || '';
+            }
+            return `${this.fechaAFormatoLegible(student.initFormat)} al ${this.fechaAFormatoLegible(student.finFormat)}${student.descripcion ? '\n' + student.descripcion : ''}`;
+        case 'descripcion2':
+            return `Fecha: ${this.fechaAFormatoLegible(student.emisionFormat)}\nHoras lectivas: ${student.ihrlectiva}`;
+        case 'ihrlectiva':
+            return `${student.ihrlectiva} horas lectivas`;
+        case 'nombreCompleto':
+            return `${student.nombre} ${student.apellido}`;
+        case 'codigoCurso':
+            return student.codigo.split('-')[0];
+        case 'codigoCertificado':
+            return student.iIdCertificado.toString();
+        case 'nota':
+            return student.nota || 'Aprobado';
+        case 'emisionFormat':
+            return this.fechaAFormatoLegible(student.emisionFormat);
+        case 'fechaFormat':
+            return this.fechaAFormatoLegible(student.fechaFormat);
+        default:
+            return student[fieldKey as keyof Certificado]?.toString() || '';
     }
-  }
+}
 
   private fechaAFormatoLegible(fechaStr: string): string {
     try {

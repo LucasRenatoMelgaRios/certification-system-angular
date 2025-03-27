@@ -446,3 +446,25 @@
   .icon-save::before {
     content: "💾";
   }
+
+  .content-edit {
+    width: 180px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-height: 30px;
+    resize: vertical;
+    margin-bottom: 10px;
+  }
+  
+  .style-group textarea {
+    font-family: inherit;
+  }
+
+  .style-group2{
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }

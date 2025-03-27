@@ -129,6 +129,32 @@
             </div>
           </div>
 
+          <div class="style-group">
+            <label>Contenido:</label>
+            <div class="style-group2">
+              <input 
+                  type="text" 
+                  class="content-edit"
+                  [(ngModel)]="zone.customPrefix"
+                  (ngModelChange)="onContentChange(zone.id)"
+                  (click)="$event.stopPropagation()"
+                  placeholder="Prefijo"
+              >
+          </div>
+          
+          <div class="style-group">
+              <input 
+                  type="text" 
+                  class="content-edit"
+                  [(ngModel)]="zone.customSuffix"
+                  (ngModelChange)="onContentChange(zone.id)"
+                  (click)="$event.stopPropagation()"
+                  placeholder="Sufijo"
+              >
+          </div>
+          </div>
+        
+
           <div class="field-styling">
             <div class="style-group">
               <label>Color:</label>

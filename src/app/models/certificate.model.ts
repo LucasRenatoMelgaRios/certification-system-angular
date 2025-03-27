@@ -4,6 +4,7 @@ export interface CertTemplate {
   imageUrl: string;
   pageType: 'front' | 'back';
   hasSignature: boolean;
+
   dimensions?: {
     width: number;
     height: number;
@@ -64,6 +65,10 @@ export interface DropZone {
   type: 'text' | 'dates';
   textColor: string;
   fontFamily: string;
+  customText?: string; // <-- Nueva propiedad
+  customPrefix?: string;
+  customSuffix?: string;
+
 }
 
 export interface DroppedItem {
