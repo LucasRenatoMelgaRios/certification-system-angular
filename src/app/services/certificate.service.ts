@@ -9,7 +9,7 @@ import { CertTemplate, Certificado } from '../models/certificate.model';
 })
 export class CertificateService {
   private apiTemplatesUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/certificados'; // Actualiza con tu endpoint real
-  private apiStudentsUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/estudiantes'; // Actualiza con tu endpoint real
+  private apiStudentsUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/estudiante'; // Actualiza con tu endpoint real
 
   constructor(private http: HttpClient) { }
 

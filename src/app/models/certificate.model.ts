@@ -87,9 +87,11 @@ export interface DropZone {
   type: 'text' | 'dates';
   textColor: string;
   fontFamily: string;
-  customText?: string; // <-- Nueva propiedad
+  customText?: string;
   customPrefix?: string;
   customSuffix?: string;
+  isItalic?: boolean; // Nueva propiedad
+
 
 }
 

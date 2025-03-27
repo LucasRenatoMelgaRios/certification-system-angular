@@ -70,23 +70,23 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     const layout = CERTIFICATE_LAYOUTS[this.certificateType];
     const savedConfig = this.loadSavedConfiguration();
     
-    if (savedConfig) {
-        // Procesar con configuración guardada
-        const processZones = (zones: any[], defaultZones: any[]) => {
-            return defaultZones.map(defaultZone => {
-                const savedZone = zones.find((z: any) => z.fieldKey === defaultZone.fieldKey);
-                return {
-                    ...defaultZone,
-                    position: savedZone?.position || defaultZone.position,
-                    hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
-                    textColor: savedZone?.textColor || defaultZone.textColor || 'black',
-                    fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial',
-                    customPrefix: savedZone?.customPrefix || '',
-                    customSuffix: savedZone?.customSuffix || ''
-                };
-            });
-        };
+    const processZones = (zones: any[], defaultZones: any[]) => {
+        return defaultZones.map(defaultZone => {
+            const savedZone = zones.find((z: any) => z.fieldKey === defaultZone.fieldKey);
+            return {
+                ...defaultZone,
+                position: savedZone?.position || defaultZone.position,
+                hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
+                textColor: savedZone?.textColor || defaultZone.textColor || 'black',
+                fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial',
+                isItalic: savedZone?.isItalic ?? defaultZone.isItalic ?? false, // Nuevo campo
+                customPrefix: savedZone?.customPrefix || '',
+                customSuffix: savedZone?.customSuffix || ''
+            };
+        });
+    };
 
+    if (savedConfig) {
         this.pageStates = {
             front: {
                 dropZones: processZones(savedConfig.front.dropZones, layout.front),
@@ -102,7 +102,6 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
             }
         };
     } else {
-        // Configuración inicial por defecto
         this.pageStates = {
             front: {
                 dropZones: layout.front.map(z => ({
@@ -110,6 +109,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
                     hidden: z.hidden ?? false,
                     textColor: z.textColor || 'black',
                     fontFamily: z.fontFamily || 'Arial',
+                    isItalic: z.isItalic ?? false, // Nuevo campo
                     customPrefix: '',
                     customSuffix: ''
                 })),
@@ -122,6 +122,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
                     hidden: z.hidden ?? false,
                     textColor: z.textColor || 'black',
                     fontFamily: z.fontFamily || 'Arial',
+                    isItalic: z.isItalic ?? false, // Nuevo campo
                     customPrefix: '',
                     customSuffix: ''
                 })),
@@ -158,14 +159,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   saveConfiguration(): void {
     try {
-        // Cargar todas las configuraciones existentes
         let allConfigs: Record<string, any> = {};
         const savedConfig = localStorage.getItem('certificate-config');
         if (savedConfig) {
             allConfigs = JSON.parse(savedConfig);
         }
 
-        // Crear copia del estado actual para guardar
         const configToSave = {
             front: {
                 ...this.pageStates.front,
@@ -179,6 +178,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
                     hidden: zone.hidden ?? false,
                     textColor: zone.textColor || 'black',
                     fontFamily: zone.fontFamily || 'Arial',
+                    isItalic: zone.isItalic ?? false, // Nuevo campo
                     customPrefix: zone.customPrefix || '',
                     customSuffix: zone.customSuffix || ''
                 }))
@@ -195,19 +195,16 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
                     hidden: zone.hidden ?? false,
                     textColor: zone.textColor || 'black',
                     fontFamily: zone.fontFamily || 'Arial',
+                    isItalic: zone.isItalic ?? false, // Nuevo campo
                     customPrefix: zone.customPrefix || '',
                     customSuffix: zone.customSuffix || ''
                 }))
             }
         };
 
-        // Actualizar la configuración para el tipo actual
         allConfigs[this.certificateType] = configToSave;
-
-        // Guardar todas las configuraciones
         localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
 
-        // Mostrar feedback
         this.showNotification('Configuración guardada exitosamente', 'success');
         this.cdr.detectChanges();
     } catch (error) {
@@ -560,6 +557,15 @@ private createFallbackTemplates(): CertTemplate[] {
     return parts.join(' ');
 }
 
+// En CertificationModuleComponent
+toggleItalic(zoneId: number): void {
+  const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+  if (zone) {
+    zone.isItalic = !zone.isItalic;
+    this.cdr.detectChanges();
+  }
+}
+
 private getOriginalValue(fieldKey: string, student: Certificado): string {
     switch(fieldKey) {
         case 'descripcion':
@@ -766,27 +772,25 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
         
         if (!ctx) throw new Error('Could not get canvas context');
 
-        // Load and draw template image
         const templateImage = await this.loadTemplateImage(this.selectedCert.imageUrl);
         
-        // Clear canvas and draw background
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
 
-        // Draw all visible zones with their specific styles
         for (const zone of pageState.dropZones) {
             if (zone.hidden) continue;
 
-            // Configuración de tamaño de fuente aumentado
-            const baseFontSize = 52; // Tamaño base aumentado (antes era 24)
-            const italiannoMultiplier = 1.8; // Multiplicador para Italianno
-            
+            const baseFontSize = 52;
+            const italiannoMultiplier = 1.8;
             const fontSize = zone.fontFamily === 'Italianno' 
                 ? baseFontSize * italiannoMultiplier 
                 : baseFontSize;
 
-            ctx.font = `${fontSize}px ${zone.fontFamily || 'Arial'}`;
+            // Aplicar cursiva si está activada
+            const fontStyle = zone.isItalic ? 'italic' : 'normal'; // Nuevo
+            ctx.font = `${fontStyle} ${fontSize}px ${zone.fontFamily || 'Arial'}`;
+            
             ctx.fillStyle = zone.textColor || '#000000';
             ctx.textBaseline = 'top';
 
@@ -794,7 +798,7 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
             
             if (zone.type === 'dates') {
                 const lines = text.split('\n');
-                const lineSpacing = zone.fontFamily === 'Italianno' ? 50 : 45; // Aumentado de 35/30
+                const lineSpacing = zone.fontFamily === 'Italianno' ? 50 : 45;
                 
                 lines.forEach((line, index) => {
                     ctx.fillText(
@@ -808,7 +812,6 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
             }
         }
 
-        // Add the rendered canvas to PDF
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
         doc.addImage(
             imgData, 

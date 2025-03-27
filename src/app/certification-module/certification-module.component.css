@@ -469,3 +469,12 @@
     justify-content: center;
     align-items: center;
   }
+
+  .icon-italic {
+    font-style: italic;
+    font-weight: 600;
+  }
+  
+  .color-btn.active .icon-italic {
+    color: #4285f4;
+  }
