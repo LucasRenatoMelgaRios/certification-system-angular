@@ -58,6 +58,8 @@ export interface DropZone {
   pageId: 'front' | 'back';
   hidden?: boolean;
   type: 'text' | 'dates';
+  textColor?: string;  // Added property
+  fontFamily?: string; // Added property
 }
 
 export interface DroppedItem {
@@ -94,45 +96,59 @@ export interface PageLayout {
   back: DropZone[];
 }
 
+export const AVAILABLE_FONTS = [
+  'EngraversGothic BT',
+  'Maratre',
+  'Bahnschrift',
+  'Calibri',
+  'Times New Roman',
+  'Italianno',
+  'Roboto',
+  'PaddingtonSC',
+  'Romanesque Serif',
+  'BernhardMod BT',
+  'Arial'
+];
+
 export const CERTIFICATE_LAYOUTS: { [key: string]: PageLayout } = {
   curso: {
     front: [
-      { id: 1, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text' },
-      { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text' },
-      { id: 3, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates' },
-      { id: 4, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text' },
-      { id: 5, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text' }
+      { id: 1, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 3, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial' },
+      { id: 4, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 5, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' }
     ],
     back: [
-      { id: 6, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text' },
-      { id: 7, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text' },
-      { id: 8, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text' },
-      { id: 9, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text' },
-      { id: 10, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text' }
+      { id: 6, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 7, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 8, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 9, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 10, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' }
     ]
   },
   diplomado: {
     front: [
-      { id: 11, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text' },
-      { id: 12, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text' },
-      { id: 13, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates' },
-      { id: 14, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text' },
-      { id: 15, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text' }
+      { id: 11, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 12, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 13, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial' },
+      { id: 14, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 15, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' }
     ],
     back: [
-      { id: 16, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text' },
-      { id: 17, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text' },
-      { id: 18, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text' },
-      { id: 19, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text' },
-      { id: 20, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text' }
+      { id: 16, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 17, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 18, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 19, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 20, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial' }
     ]
   },
   constancia: {
     front: [
-      { id: 21, fieldKey: 'descripcion', position: { x: 50, y: 150 }, pageId: 'front', type: 'text' },
-      { id: 22, fieldKey: 'descripcion2', position: { x: 50, y: 220 }, pageId: 'front', type: 'dates' },
-      { id: 23, fieldKey: 'nota', position: { x: 50, y: 290 }, pageId: 'front', type: 'text' },
-      { id: 24, fieldKey: 'emisionFormat', position: { x: 50, y: 360 }, pageId: 'front', type: 'text' }
+      { id: 21, fieldKey: 'descripcion', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 22, fieldKey: 'descripcion2', position: { x: 50, y: 220 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial' },
+      { id: 23, fieldKey: 'nota', position: { x: 50, y: 290 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' },
+      { id: 24, fieldKey: 'emisionFormat', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial' }
     ],
     back: []
   }

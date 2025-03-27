@@ -82,14 +82,42 @@
              [class.hidden]="zone.hidden"
              [class.selected]="currentPageState.selectedElement?.id === zone.id"
              (click)="handleSelectElement('dropZone', zone.id)">
-          <span>{{ getFieldLabel(zone.fieldKey) }}</span>
-          <button (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                  [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
-            <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-          </button>
+          
+          <div class="field-header">
+            <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
+            <div class="field-controls">
+              <button class="control-btn"
+                      (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
+                      [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
+                <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+              </button>
+            </div>
+          </div>
+      
+          <div class="field-styling">
+            <div class="style-group">
+              <label>Color:</label>
+              <button class="color-btn"
+                      [class.active]="zone.textColor === 'black'"
+                      (click)="toggleTextColor(zone.id); $event.stopPropagation()"
+                      [title]="zone.textColor === 'black' ? 'Cambiar a texto blanco' : 'Cambiar a texto negro'">
+                <span class="color-preview" [style.background]="zone.textColor"></span>
+                {{ zone.textColor === 'black' ? 'Negro' : 'Blanco' }}
+              </button>
+            </div>
+            
+            <div class="style-group">
+              <label>Fuente:</label>
+              <select class="font-select"
+                      [value]="zone.fontFamily"
+                      (change)="changeFontFamily(zone.id, $event)"
+                      (click)="$event.stopPropagation()">
+                <option *ngFor="let font of availableFonts" [value]="font">{{ font }}</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
     <div class="certificate-preview" #certificateContainerRef>
       <div class="certificate-container">
@@ -109,6 +137,8 @@
                [class.hidden]="zone.hidden"
                [style.left.px]="zone.position.x"
                [style.top.px]="zone.position.y"
+               [style.color]="zone.textColor"
+               [style.fontFamily]="zone.fontFamily"
                (mousedown)="startDraggingZone($event, zone)"
                (click)="handleSelectElement('dropZone', zone.id)">
             

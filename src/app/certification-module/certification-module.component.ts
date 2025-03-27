@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { CertificateService } from '../services/certificate.service';
-import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, CERTIFICATE_LAYOUTS } from '../models/certificate.model';
+import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, CERTIFICATE_LAYOUTS, AVAILABLE_FONTS 
+} from '../models/certificate.model';
 
 @Component({
   selector: 'app-certification-module',
@@ -11,191 +12,7 @@ import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, C
   imports: [CommonModule, FormsModule],
   providers: [CertificateService],
   templateUrl: './certification-module.component.html',
-  styles: [`
-    .cert-module {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      padding: 20px;
-    }
-
-    .cert-header {
-      margin-bottom: 20px;
-    }
-
-    .cert-content {
-      display: flex;
-      flex: 1;
-      gap: 20px;
-    }
-
-    .left-panel {
-      width: 300px;
-      background: #f5f5f5;
-      padding: 20px;
-      border-radius: 8px;
-    }
-
-    .controls-section {
-      margin-bottom: 20px;
-    }
-
-    .signature-controls,
-    .view-controls {
-      margin-top: 20px;
-    }
-
-    .signature-controls h3,
-    .view-controls h3 {
-      margin-bottom: 10px;
-    }
-
-    .signature-options,
-    .view-controls {
-      display: flex;
-      gap: 10px;
-    }
-
-    .signature-options button,
-    .view-controls button {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .signature-options button.active,
-    .view-controls button.active {
-      background: #4285f4;
-      color: white;
-      border-color: #4285f4;
-    }
-
-    .certificate-container {
-      position: relative;
-      overflow: auto;
-      border: 1px solid #ccc;
-      margin: 20px 0;
-      flex: 1;
-    }
-
-    .certificate-content {
-      position: relative;
-      transform-origin: 0 0;
-      background: white;
-    }
-
-    .certificate-background {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    .drop-zone {
-      position: absolute;
-      border: 2px dashed #4285f4;
-      border-radius: 4px;
-      padding: 10px;
-      background-color: rgba(66, 133, 244, 0.1);
-      min-width: 150px;
-      min-height: 40px;
-      cursor: move;
-    }
-
-    .drop-zone.hidden {
-      opacity: 0.5;
-      border-style: dotted;
-    }
-
-    .drop-zone.selected {
-      border-color: #ea4335;
-      background-color: rgba(234, 67, 53, 0.1);
-    }
-
-    .zone-content {
-      pointer-events: none;
-    }
-
-    .drop-zone-controls {
-      position: absolute;
-      top: -30px;
-      right: 0;
-      display: flex;
-      gap: 5px;
-    }
-
-    .visibility-toggle {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-
-    .cert-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 20px;
-      padding: 20px;
-      background: #f5f5f5;
-      border-radius: 8px;
-    }
-
-    .export-button {
-      padding: 12px 24px;
-      background: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      transition: background-color 0.3s ease;
-    }
-
-    .export-button:hover {
-      background: #3367d6;
-    }
-
-    .export-button i {
-      font-size: 20px;
-    }
-
-    .export-info {
-      font-size: 14px;
-      color: #666;
-    }
-
-    .zoom-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .zoom-button {
-      padding: 5px 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
-    }
-
-    .zoom-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  `]
+  styleUrls: ['./certification-module.component.css'],
 })
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('certificateRef') certificateRef!: ElementRef;
@@ -218,6 +35,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     back: { dropZones: [], droppedItems: {}, selectedElement: null }
   };
   certificados: Certificado[] = [];
+  availableFonts = AVAILABLE_FONTS;
 
   constructor(
     private certificateService: CertificateService,
@@ -253,7 +71,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       front: {
         dropZones: layout.front.map(z => ({
           ...z,
-          hidden: z.hidden || false
+          hidden: z.hidden || false,
+          textColor: z.textColor || 'black',
+          fontFamily: z.fontFamily || 'Arial'
         })),
         droppedItems: {},
         selectedElement: null
@@ -261,7 +81,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       back: {
         dropZones: layout.back.map(z => ({
           ...z,
-          hidden: z.hidden || false
+          hidden: z.hidden || false,
+          textColor: z.textColor || 'black',
+          fontFamily: z.fontFamily || 'Arial'
         })),
         droppedItems: {},
         selectedElement: null
@@ -281,6 +103,24 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         return a.hasSignature ? 1 : -1;
       });
   }
+
+  toggleTextColor(zoneId: number): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone) {
+      zone.textColor = zone.textColor === 'black' ? 'white' : 'black';
+      this.cdr.detectChanges();
+    }
+  }
+
+  changeFontFamily(zoneId: number, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone) {
+      zone.fontFamily = select.value;
+      this.cdr.detectChanges();
+    }
+  }
+
 
   toggleSignature(hasSignature: boolean): void {
     if (this.currentTemplateHasSignature !== hasSignature) {
@@ -477,6 +317,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
         return student[fieldKey as keyof Certificado]?.toString() || '';
     }
   }
+
   getFieldLabel(fieldKey: string): string {
     const labels: {[key: string]: string} = {
       'nombre': 'Nombre completo',
@@ -582,6 +423,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
+
   private async renderPageToPDF(doc: jsPDF, pageId: 'front' | 'back'): Promise<void> {
     if (!this.selectedCert?.imageUrl) {
       throw new Error(`Template not found for page: ${pageId}`);
@@ -605,14 +447,14 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
 
-      // Configure text rendering
-      ctx.font = '24px Arial';
-      ctx.fillStyle = '#000000';
-      ctx.textBaseline = 'top';
-
-      // Draw all visible zones
+      // Draw all visible zones with their specific styles
       for (const zone of pageState.dropZones) {
         if (zone.hidden) continue;
+
+        // Configure text rendering with zone-specific styles
+        ctx.font = `24px ${zone.fontFamily || 'Arial'}`;
+        ctx.fillStyle = zone.textColor || '#000000';
+        ctx.textBaseline = 'top';
 
         const text = this.getStudentDataForZone(zone.fieldKey);
         if (zone.type === 'dates') {
@@ -634,6 +476,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       throw error;
     }
   }
+
 
   private loadTemplateImage(imageUrl: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
