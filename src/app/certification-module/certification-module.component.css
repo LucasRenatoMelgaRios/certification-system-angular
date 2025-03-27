@@ -364,6 +364,7 @@
     transition: all 0.1s ease;
     font-size: 24px; /* Igualar tamaño de fuente de la preview al PDF */
     white-space: pre-wrap; /* Mantener formato de saltos de línea */
+    font-size: 52px; /* Aumentado de 24px a 32px */
 
   }
 

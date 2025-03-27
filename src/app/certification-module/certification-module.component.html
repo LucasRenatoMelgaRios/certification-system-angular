@@ -5,16 +5,21 @@
       <div
         *ngFor="let cert of certTemplates"
         class="cert-template"
-        [class.active]="selectedCert?.id === cert.id"
+        [class.active]="selectedCert?.iIdPlantilla === cert.iIdPlantilla"
         (click)="selectTemplate(cert)"
       >
         <div class="cert-template-preview">
-          <img [src]="cert.imageUrl" [alt]="cert.name" />
+          <img [src]="cert.cloudUrl" [alt]="cert.descripcion" />
         </div>
-        <span>{{ cert.name }}</span>
+        <span>{{ cert.descripcion }}</span>
+        <div class="template-badge">
+          {{ cert.codigo === 'CNF' ? 'Con Firma' : 
+             cert.codigo === 'SNF' ? 'Sin Firma' : 'Reverso' }}
+        </div>
       </div>
     </div>
   </div>
+  
   <div class="cert-content">
     <div class="left-panel">
       <div class="controls-section">
@@ -42,21 +47,20 @@
           </div>
         </div>
 
-        <div
-          class="signature-controls"
-          *ngIf="certificateType !== 'constancia'"
-        >
+        <div class="signature-controls" *ngIf="certificateType !== 'constancia'">
           <h3>Tipo de Plantilla</h3>
           <div class="signature-options">
             <button
               [class.active]="!currentTemplateHasSignature"
               (click)="toggleSignature(false)"
+              [disabled]="!hasTemplateType('SNF')"
             >
               Sin Firma
             </button>
             <button
               [class.active]="currentTemplateHasSignature"
               (click)="toggleSignature(true)"
+              [disabled]="!hasTemplateType('CNF')"
             >
               Con Firma
             </button>
@@ -70,21 +74,24 @@
           >
             Vista Frontal
           </button>
+
           <button
-            *ngIf="getTemplateForPage('back')"
-            (click)="showBackTemplate()"
-            [class.active]="currentPageId === 'back'"
-          >
-            Vista Trasera
-          </button>
+          (click)="showBackTemplate()"
+          [class.active]="currentPageId === 'back'"
+        >
+          Vista trasera
+        </button>
+
         </div>
 
-        <button class="export-button" (click)="handleExportPDF()">
-          <i class="icon-download"></i> Exportar PDF
-        </button>
-        <button class="export-button" (click)="saveConfiguration()">
-          <i class="icon-save"></i> Guardar Configuración
-        </button>
+        <div class="export-controls">
+          <button class="export-button" (click)="handleExportPDF()">
+            <i class="icon-download"></i> Exportar PDF
+          </button>
+          <button class="export-button" (click)="saveConfiguration()">
+            <i class="icon-save"></i> Guardar Configuración
+          </button>
+        </div>
 
         <div class="zoom-controls">
           <button
@@ -119,9 +126,7 @@
             <div class="field-controls">
               <button
                 class="control-btn"
-                (click)="
-                  toggleZoneVisibility(zone.id); $event.stopPropagation()
-                "
+                (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
                 [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
               >
                 <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
@@ -129,44 +134,38 @@
             </div>
           </div>
 
-          <div class="style-group">
-            <label>Contenido:</label>
-            <div class="style-group2">
-              <input 
-                  type="text" 
-                  class="content-edit"
-                  [(ngModel)]="zone.customPrefix"
-                  (ngModelChange)="onContentChange(zone.id)"
-                  (click)="$event.stopPropagation()"
-                  placeholder="Prefijo"
+          <div class="field-content">
+            <div class="style-group">
+              <label>Texto adicional:</label>
+              <input
+                type="text"
+                class="content-edit"
+                [(ngModel)]="zone.customPrefix"
+                (ngModelChange)="onContentChange(zone.id)"
+                (click)="$event.stopPropagation()"
+                placeholder="Prefijo (ej: Estimado)"
               >
-          </div>
-          
-          <div class="style-group">
-              <input 
-                  type="text" 
-                  class="content-edit"
-                  [(ngModel)]="zone.customSuffix"
-                  (ngModelChange)="onContentChange(zone.id)"
-                  (click)="$event.stopPropagation()"
-                  placeholder="Sufijo"
-              >
-          </div>
-          </div>
-        
+            </div>
 
-          <div class="field-styling">
+            <div class="style-group">
+              <label>Texto posterior:</label>
+              <input
+                type="text"
+                class="content-edit"
+                [(ngModel)]="zone.customSuffix"
+                (ngModelChange)="onContentChange(zone.id)"
+                (click)="$event.stopPropagation()"
+                placeholder="Sufijo (ej: Saludos)"
+              >
+            </div>
+
             <div class="style-group">
               <label>Color:</label>
               <button
                 class="color-btn"
                 [class.active]="zone.textColor === 'black'"
                 (click)="toggleTextColor(zone.id); $event.stopPropagation()"
-                [title]="
-                  zone.textColor === 'black'
-                    ? 'Cambiar a texto blanco'
-                    : 'Cambiar a texto negro'
-                "
+                [title]="zone.textColor === 'black' ? 'Cambiar a texto blanco' : 'Cambiar a texto negro'"
               >
                 <span
                   class="color-preview"
@@ -180,8 +179,6 @@
               <label>Fuente:</label>
               <select
                 class="font-select"
-                [ngModel]="zone.fontFamily"
-                (ngModelChange)="changeFontFamily(zone.id, $event)"
                 [(ngModel)]="zone.fontFamily"
                 (ngModelChange)="onFontChange(zone.id, $event)"
                 (click)="$event.stopPropagation()"
@@ -195,22 +192,21 @@
         </div>
       </div>
     </div>
+
     <div class="certificate-preview" #certificateContainerRef>
       <div class="certificate-container">
         <div
           class="certificate-content"
           [style.transform]="'scale(' + zoomLevel + ')'"
-          [style.width.px]="getCurrentTemplate()?.dimensions?.width || certSize.width"
-          [style.height.px]="getCurrentTemplate()?.dimensions?.height || certSize.height"
+          [style.width.px]="selectedCert?.dimensions?.width || certSize.width"
+          [style.height.px]="selectedCert?.dimensions?.height || certSize.height"
         >
           <div
             class="certificate-background"
             #certificateRef
-            [style.backgroundImage]="
-              'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'
-            "
-            [style.width.px]="getCurrentTemplate()?.dimensions?.width || certSize.width"
-            [style.height.px]="getCurrentTemplate()?.dimensions?.height || certSize.height"
+            [style.backgroundImage]="'url(' + (selectedCert?.cloudUrl || '') + ')'"
+            [style.width.px]="selectedCert?.dimensions?.width || certSize.width"
+            [style.height.px]="selectedCert?.dimensions?.height || certSize.height"
           ></div>
 
           <div
@@ -227,11 +223,7 @@
           >
             <div class="zone-content">
               <ng-container *ngIf="zone.type === 'dates'; else textField">
-                <div
-                  *ngFor="
-                    let line of getStudentDataForZone(zone.fieldKey).split('\n')
-                  "
-                >
+                <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
                   {{ line }}
                 </div>
               </ng-container>
@@ -243,9 +235,7 @@
 
             <div class="drop-zone-controls">
               <button
-                (click)="
-                  toggleZoneVisibility(zone.id); $event.stopPropagation()
-                "
+                (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
                 class="visibility-toggle"
                 [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
               >

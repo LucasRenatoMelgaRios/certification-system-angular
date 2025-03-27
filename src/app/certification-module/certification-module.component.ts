@@ -272,23 +272,96 @@ private showErrorMessage(message: string): void {
 }
   
 
-  toggleSignature(hasSignature: boolean): void {
-    if (this.currentTemplateHasSignature !== hasSignature) {
-      this.currentTemplateHasSignature = hasSignature;
-      const template = this.frontTemplates.find(t => t.hasSignature === hasSignature);
-      if (template) {
-        this.selectTemplate(template);
+toggleSignature(hasSignature: boolean): void {
+  if (this.currentTemplateHasSignature !== hasSignature) {
+    this.currentTemplateHasSignature = hasSignature;
+    const targetCode = hasSignature ? 'CNF' : 'SNF';
+    
+    // Buscar plantilla con el código correspondiente
+    const template = this.certTemplates.find(t => 
+      t.pageType === 'front' && t.codigo === targetCode
+    );
+    
+    if (template) {
+      this.selectTemplate(template);
+    } else {
+      console.warn(`No se encontró plantilla frontal con código ${targetCode}`);
+      // Seleccionar cualquier plantilla frontal como fallback
+      const fallbackTemplate = this.certTemplates.find(t => t.pageType === 'front');
+      if (fallbackTemplate) {
+        this.selectTemplate(fallbackTemplate);
       }
     }
   }
+}
 
-  getTemplateForPage(pageId: 'front' | 'back'): CertTemplate | null {
-    if (pageId === 'front') {
-      return this.frontTemplates.find(t => t.hasSignature === this.currentTemplateHasSignature) || null;
-    }
-    return this.certTemplates.find(t => t.pageType === pageId) || null;
+getTemplateForPage(pageId: 'front' | 'back'): CertTemplate | null {
+  if (pageId === 'front') {
+    // Buscar plantilla frontal con el código correspondiente al estado de firma actual
+    const targetCode = this.currentTemplateHasSignature ? 'CNF' : 'SNF';
+    return this.certTemplates.find(t => 
+      t.pageType === 'front' && t.codigo === targetCode
+    ) || null;
   }
+  
+  // Para plantilla trasera, buscar cualquier plantilla con código REV
+  return this.certTemplates.find(t => 
+    t.pageType === 'back' && t.codigo === 'REV'
+  ) || null;
+}
 
+private createFallbackTemplates(): CertTemplate[] {
+  return [
+    {
+      iIdPlantilla: 1,
+      iIdTPlantilla: 1,
+      iIdCurso: 0,
+      codigo: 'SNF',
+      descripcion: 'Frontal Sin Firma',
+      cloudUrl: 'assets/fallback-front.jpg',
+      cloudKey: '',
+      fechaFormat: new Date().toISOString(),
+      id: 1,
+      name: 'Frontal Sin Firma',
+      imageUrl: 'assets/fallback-front.jpg',
+      pageType: 'front',
+      hasSignature: false,
+      dimensions: { width: 1123, height: 794 }
+    },
+    {
+      iIdPlantilla: 2,
+      iIdTPlantilla: 2,
+      iIdCurso: 0,
+      codigo: 'CNF',
+      descripcion: 'Frontal Con Firma',
+      cloudUrl: 'assets/fallback-front-signed.jpg',
+      cloudKey: '',
+      fechaFormat: new Date().toISOString(),
+      id: 2,
+      name: 'Frontal Con Firma',
+      imageUrl: 'assets/fallback-front-signed.jpg',
+      pageType: 'front',
+      hasSignature: true,
+      dimensions: { width: 1123, height: 794 }
+    },
+    {
+      iIdPlantilla: 3,
+      iIdTPlantilla: 3,
+      iIdCurso: 0,
+      codigo: 'REV',
+      descripcion: 'Reverso',
+      cloudUrl: 'assets/fallback-back.jpg',
+      cloudKey: '',
+      fechaFormat: new Date().toISOString(),
+      id: 3,
+      name: 'Reverso',
+      imageUrl: 'assets/fallback-back.jpg',
+      pageType: 'back',
+      hasSignature: false,
+      dimensions: { width: 1123, height: 794 }
+    }
+  ];
+}
   getCurrentTemplate(): CertTemplate | null {
     return this.getTemplateForPage(this.currentPageId);
   }
@@ -297,46 +370,32 @@ private showErrorMessage(message: string): void {
     this.certificateService.getTemplates().subscribe({
       next: (templates) => {
         this.certTemplates = templates;
+        
         if (templates.length > 0) {
-          const frontTemplate = templates.find(t => t.pageType === 'front' && !t.hasSignature);
-          if (frontTemplate) {
-            this.selectedCert = frontTemplate;
-            this.currentTemplateHasSignature = frontTemplate.hasSignature;
-            this.preloadTemplateImage(frontTemplate.imageUrl);
+          // Seleccionar plantilla frontal sin firma por defecto (SNF)
+          const defaultTemplate = templates.find(t => 
+            t.pageType === 'front' && t.codigo === 'SNF'
+          ) || templates.find(t => t.pageType === 'front');
+          
+          if (defaultTemplate) {
+            this.selectedCert = defaultTemplate;
+            this.currentTemplateHasSignature = defaultTemplate.codigo === 'CNF';
+            this.preloadTemplateImage(defaultTemplate.cloudUrl);
           }
         }
       },
       error: (err) => {
         console.error('Error loading templates:', err);
-        this.certTemplates = [
-          {
-            id: 1,
-            name: "Frontal Sin Firma",
-            imageUrl: "assets/fallback-front.jpg",
-            pageType: 'front',
-            hasSignature: false
-          },
-          {
-            id: 2,
-            name: "Frontal Con Firma",
-            imageUrl: "assets/fallback-front-signed.jpg",
-            pageType: 'front',
-            hasSignature: true
-          },
-          {
-            id: 3,
-            name: "Trasera",
-            imageUrl: "assets/fallback-back.jpg",
-            pageType: 'back',
-            hasSignature: false
-          }
-        ];
-
-        const frontTemplate = this.certTemplates.find(t => t.pageType === 'front' && !t.hasSignature);
-        if (frontTemplate) {
-          this.selectedCert = frontTemplate;
-          this.currentTemplateHasSignature = frontTemplate.hasSignature;
-          this.preloadTemplateImage(frontTemplate.imageUrl);
+        // Fallback con datos locales
+        this.certTemplates = this.createFallbackTemplates();
+        const fallbackTemplate = this.certTemplates.find(t => 
+          t.pageType === 'front' && t.codigo === 'SNF'
+        );
+        
+        if (fallbackTemplate) {
+          this.selectedCert = fallbackTemplate;
+          this.currentTemplateHasSignature = false;
+          this.preloadTemplateImage(fallbackTemplate.cloudUrl);
         }
       }
     });
@@ -353,9 +412,10 @@ private showErrorMessage(message: string): void {
         console.error('Error loading student data:', err);
         this.certificados = [{
           iIdCertificado: 56513,
-          iIdDetalle: 79029,
-          codigo: "COD0065-228710",
-          descripcion: null,
+        iIdDetalle: 79029,
+         iIdCurso: 0, // <-- Campo añadido
+         codigo: "COD0065-228710",
+         descripcion: null,
           dateInit: "2024-12-05T17:00:00.000Z",
           dateFin: "2025-01-06T17:00:00.000Z",
           dateEmision: "2025-01-07T17:00:00.000Z",
@@ -408,16 +468,40 @@ private showErrorMessage(message: string): void {
 
   private async preloadTemplateImage(imageUrl: string): Promise<void> {
     return new Promise((resolve) => {
+      if (!imageUrl) {
+        this.certSize = { width: 1123, height: 794 };
+        this.cdr.detectChanges();
+        return resolve();
+      }
+      
       const img = new Image();
       img.crossOrigin = 'Anonymous';
+      
       img.onload = () => {
         this.certSize = {
           width: img.naturalWidth || 1123,
           height: img.naturalHeight || 794
         };
+        
+        // Actualizar dimensiones en la plantilla seleccionada
+        if (this.selectedCert) {
+          this.selectedCert.dimensions = {
+            width: img.naturalWidth,
+            height: img.naturalHeight
+          };
+        }
+        
         this.cdr.detectChanges();
         resolve();
       };
+      
+      img.onerror = () => {
+        console.warn('Error al cargar la imagen de plantilla, usando dimensiones por defecto');
+        this.certSize = { width: 1123, height: 794 };
+        this.cdr.detectChanges();
+        resolve();
+      };
+      
       img.src = imageUrl;
     });
   }
@@ -430,10 +514,17 @@ private showErrorMessage(message: string): void {
 
   selectTemplate(cert: CertTemplate): void {
     this.selectedCert = cert;
+    
+    // Actualizar estado de firma solo si es plantilla frontal
     if (cert.pageType === 'front') {
-      this.currentTemplateHasSignature = cert.hasSignature;
+      this.currentTemplateHasSignature = cert.codigo === 'CNF';
     }
-    this.preloadTemplateImage(cert.imageUrl);
+    
+    // Precargar imagen usando cloudUrl
+    this.preloadTemplateImage(cert.cloudUrl);
+    
+    // Actualizar UI
+    this.cdr.detectChanges();
   }
 
   showFrontTemplate(): void {
@@ -487,8 +578,9 @@ private getOriginalValue(fieldKey: string, student: Certificado): string {
         case 'codigoCertificado':
             return student.iIdCertificado.toString();
         case 'nota':
-            return student.nota || 'Aprobado';
-        case 'emisionFormat':
+          return student.nota !== undefined && student.nota !== null 
+          ? String(student.nota) 
+          : 'Aprobado';        case 'emisionFormat':
             return this.fechaAFormatoLegible(student.emisionFormat);
         case 'fechaFormat':
             return this.fechaAFormatoLegible(student.fechaFormat);
@@ -497,6 +589,11 @@ private getOriginalValue(fieldKey: string, student: Certificado): string {
     }
 }
 
+// certification-module.component.ts
+
+hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
+  return this.certTemplates.some(t => t.codigo === code);
+}
   private fechaAFormatoLegible(fechaStr: string): string {
     try {
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(fechaStr)) {
@@ -654,62 +751,79 @@ private getOriginalValue(fieldKey: string, student: Certificado): string {
     doc: jsPDF, 
     pageId: 'front' | 'back',
     dimensions: { width: number; height: number }
-  ): Promise<void> {
+): Promise<void> {
     if (!this.selectedCert?.imageUrl) {
-      throw new Error(`Template not found for page: ${pageId}`);
+        throw new Error(`Template not found for page: ${pageId}`);
     }
 
     const pageState = this.pageStates[pageId];
 
     try {
-      const canvas = document.createElement('canvas');
-      canvas.width = dimensions.width;
-      canvas.height = dimensions.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) throw new Error('Could not get canvas context');
+        const canvas = document.createElement('canvas');
+        canvas.width = dimensions.width;
+        canvas.height = dimensions.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) throw new Error('Could not get canvas context');
 
-      // Load and draw template image
-      const templateImage = await this.loadTemplateImage(this.selectedCert.imageUrl);
-      
-      // Clear canvas and draw background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
+        // Load and draw template image
+        const templateImage = await this.loadTemplateImage(this.selectedCert.imageUrl);
+        
+        // Clear canvas and draw background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
 
-      // Draw all visible zones with their specific styles
-      for (const zone of pageState.dropZones) {
-        if (zone.hidden) continue;
+        // Draw all visible zones with their specific styles
+        for (const zone of pageState.dropZones) {
+            if (zone.hidden) continue;
 
-        // Aumentar tamaño de fuente para Italianno
-        const fontSize = zone.fontFamily === 'Italianno' ? 32 : 24;
-        ctx.font = `${fontSize}px ${zone.fontFamily || 'Arial'}`;
-        ctx.fillStyle = zone.textColor || '#000000';
-        ctx.textBaseline = 'top';
+            // Configuración de tamaño de fuente aumentado
+            const baseFontSize = 52; // Tamaño base aumentado (antes era 24)
+            const italiannoMultiplier = 1.8; // Multiplicador para Italianno
+            
+            const fontSize = zone.fontFamily === 'Italianno' 
+                ? baseFontSize * italiannoMultiplier 
+                : baseFontSize;
 
-        const text = this.getStudentDataForZone(zone.fieldKey);
-        if (zone.type === 'dates') {
-          const lines = text.split('\n');
-          lines.forEach((line, index) => {
-            // Ajustar espaciado si es Italianno
-            const lineSpacing = zone.fontFamily === 'Italianno' ? 35 : 30;
-            ctx.fillText(line, zone.position.x, zone.position.y + (index * lineSpacing));
-          });
-        } else {
-          ctx.fillText(text, zone.position.x, zone.position.y);
+            ctx.font = `${fontSize}px ${zone.fontFamily || 'Arial'}`;
+            ctx.fillStyle = zone.textColor || '#000000';
+            ctx.textBaseline = 'top';
+
+            const text = this.getStudentDataForZone(zone.fieldKey);
+            
+            if (zone.type === 'dates') {
+                const lines = text.split('\n');
+                const lineSpacing = zone.fontFamily === 'Italianno' ? 50 : 45; // Aumentado de 35/30
+                
+                lines.forEach((line, index) => {
+                    ctx.fillText(
+                        line, 
+                        zone.position.x, 
+                        zone.position.y + (index * lineSpacing)
+                    );
+                });
+            } else {
+                ctx.fillText(text, zone.position.x, zone.position.y);
+            }
         }
-      }
 
-      // Add the rendered canvas to PDF
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      doc.addImage(imgData, 'JPEG', 0, 0, dimensions.width, dimensions.height);
+        // Add the rendered canvas to PDF
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        doc.addImage(
+            imgData, 
+            'JPEG', 
+            0, 
+            0, 
+            dimensions.width, 
+            dimensions.height
+        );
 
     } catch (error) {
-      console.error('Error rendering PDF page:', error);
-      throw error;
+        console.error('Error rendering PDF page:', error);
+        throw error;
     }
-  }
-
+}
   handleSelectElement(type: 'dropZone', id: number): void {
     this.currentPageState.selectedElement = {
       type,

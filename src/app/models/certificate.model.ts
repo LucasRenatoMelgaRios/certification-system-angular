@@ -1,19 +1,36 @@
 export interface CertTemplate {
-  id: number;
-  name: string;
-  imageUrl: string;
-  pageType: 'front' | 'back';
-  hasSignature: boolean;
+  // Campos del nuevo formato de API
+  iIdPlantilla: number;
+  iIdTPlantilla: number;
+  iIdCurso: number;
+  codigo: 'CNF' | 'SNF' | 'REV'; // CNF=Con firma, SNF=Sin firma, REV=Reverso
+  descripcion: string;
+  cloudUrl: string;
+  cloudKey: string;
+  fechaFormat: string;
 
+  // Campos del modelo original (mantenidos para compatibilidad)
+  id: number;              // Mapeado desde iIdPlantilla
+  name: string;            // Mapeado desde descripcion
+  imageUrl: string;        // Mapeado desde cloudUrl
+  pageType: 'front' | 'back'; // Calculado: 'back' si descripcion es 'REVERSO', sino 'front'
+  hasSignature: boolean;   // Calculado: true si codigo es 'CNF'
+
+  // Dimensiones opcionales
   dimensions?: {
     width: number;
     height: number;
   };
-}
 
+  // Campos adicionales útiles para la UI
+  isDefault?: boolean;
+  thumbnailUrl?: string;   // URL alternativa para thumbnails
+}
 export interface Certificado {
+  // Campos del nuevo formato
   iIdCertificado: number;
   iIdDetalle: number;
+  iIdCurso: number; // <-- Nuevo campo añadido
   codigo: string;
   descripcion: string | null;
   dateInit: string;
@@ -50,9 +67,14 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
-  nota?: string;
+  
+  // Campos opcionales
+  nota?: string | number; // Puede ser string o number según la API
+  
+  // Campos adicionales para compatibilidad
+  // (si necesitas mantener compatibilidad con versiones anteriores)
+  iIdCertificadoOriginal?: number; // Ejemplo de campo alternativo
 }
-
 export interface DropZone {
   id: number;
   fieldKey: string;
