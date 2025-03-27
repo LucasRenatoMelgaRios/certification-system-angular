@@ -58,8 +58,8 @@ export interface DropZone {
   pageId: 'front' | 'back';
   hidden?: boolean;
   type: 'text' | 'dates';
-  textColor?: string;  // Added property
-  fontFamily?: string; // Added property
+  textColor: string;  // Added property
+  fontFamily: string; // Added property
 }
 
 export interface DroppedItem {

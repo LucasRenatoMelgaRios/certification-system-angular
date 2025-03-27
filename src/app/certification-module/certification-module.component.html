@@ -63,6 +63,9 @@
         <button class="export-button" (click)="handleExportPDF()">
           <i class="icon-download"></i> Exportar PDF
         </button>
+        <button class="export-button" (click)="saveConfiguration()">
+          <i class="icon-save"></i> Guardar Configuración
+        </button>
 
         <div class="zoom-controls">
           <button class="zoom-button" (click)="handleZoomOut()" [disabled]="zoomLevel <= 0.5">
@@ -119,48 +122,49 @@
         </div>
       </div>
 
-    <div class="certificate-preview" #certificateContainerRef>
-      <div class="certificate-container">
-        <div class="certificate-content" 
-             [style.transform]="'scale(' + zoomLevel + ')'"
-             [style.width.px]="certSize.width"
-             [style.height.px]="certSize.height">
-          
-          <div class="certificate-background" 
-               #certificateRef
-               [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'">
-          </div>
-          
-          <div *ngFor="let zone of currentPageState.dropZones"
-               class="drop-zone"
-               [class.selected]="currentPageState.selectedElement?.id === zone.id"
-               [class.hidden]="zone.hidden"
-               [style.left.px]="zone.position.x"
-               [style.top.px]="zone.position.y"
-               [style.color]="zone.textColor"
-               [style.fontFamily]="zone.fontFamily"
-               (mousedown)="startDraggingZone($event, zone)"
-               (click)="handleSelectElement('dropZone', zone.id)">
-            
-            <div class="zone-content">
-              <ng-container *ngIf="zone.type === 'dates'; else textField">
-                <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
-                  {{ line }}
-                </div>
-              </ng-container>
-              
-              <ng-template #textField>
-                {{ getStudentDataForZone(zone.fieldKey) }}
-              </ng-template>
-            </div>
 
-            <div class="drop-zone-controls">
-              <button (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                      class="visibility-toggle"
-                      [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
-                <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-              </button>
-            </div>
+  </div>
+  <div class="certificate-preview" #certificateContainerRef>
+    <div class="certificate-container">
+      <div class="certificate-content" 
+           [style.transform]="'scale(' + zoomLevel + ')'"
+           [style.width.px]="certSize.width"
+           [style.height.px]="certSize.height">
+        
+        <div class="certificate-background" 
+             #certificateRef
+             [style.backgroundImage]="'url(' + (getCurrentTemplate()?.imageUrl || '') + ')'">
+        </div>
+        
+        <div *ngFor="let zone of currentPageState.dropZones"
+             class="drop-zone"
+             [class.selected]="currentPageState.selectedElement?.id === zone.id"
+             [class.hidden]="zone.hidden"
+             [style.left.px]="zone.position.x"
+             [style.top.px]="zone.position.y"
+             [style.color]="zone.textColor"
+             [style.fontFamily]="zone.fontFamily"
+             (mousedown)="startDraggingZone($event, zone)"
+             (click)="handleSelectElement('dropZone', zone.id)">
+          
+          <div class="zone-content">
+            <ng-container *ngIf="zone.type === 'dates'; else textField">
+              <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
+                {{ line }}
+              </div>
+            </ng-container>
+            
+            <ng-template #textField>
+              {{ getStudentDataForZone(zone.fieldKey) }}
+            </ng-template>
+          </div>
+
+          <div class="drop-zone-controls">
+            <button (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
+                    class="visibility-toggle"
+                    [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'">
+              <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+            </button>
           </div>
         </div>
       </div>

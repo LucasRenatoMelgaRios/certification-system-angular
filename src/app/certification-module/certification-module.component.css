@@ -10,6 +10,7 @@
     background-color: #f5f5f5;
     color: #333;
     line-height: 1.6;
+
   }
 
   /* Certificate module */
@@ -25,6 +26,7 @@
     padding: 20px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
+    flex-direction: row;
   }
 
   .cert-header h2 {
@@ -40,6 +42,7 @@
     gap: 15px;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
   }
 
   .cert-template {
@@ -86,11 +89,22 @@
   /* Certificate content layout */
   .cert-content {
     display: grid;
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: 1fr 2fr; /* Dos columnas: izquierda más pequeña, derecha más grande */
+    grid-template-rows: auto auto; /* Altura automática según contenido */
     gap: 20px;
     padding: 20px;
   }
-
+  
+  .cert-item:first-child {
+    grid-row: span 2; /* El primer item ocupa dos filas */
+    align-self: stretch; /* Se estira para ocupar toda la altura */
+  }
+  
+  .cert-item:nth-child(2),
+  .cert-item:nth-child(3) {
+    grid-column: 2; /* Van en la segunda columna */
+  }
+  
   .left-panel {
     display: flex;
     flex-direction: column;
@@ -403,4 +417,26 @@
     .certificate-preview {
       height: 500px;
     }
+  }
+
+  .export-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .export-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .icon-save::before {
+    content: "💾";
   }

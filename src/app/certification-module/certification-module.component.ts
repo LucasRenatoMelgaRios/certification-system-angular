@@ -64,32 +64,139 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-
   private initializePageStates(): void {
     const layout = CERTIFICATE_LAYOUTS[this.certificateType];
-    this.pageStates = {
-      front: {
-        dropZones: layout.front.map(z => ({
-          ...z,
-          hidden: z.hidden || false,
-          textColor: z.textColor || 'black',
-          fontFamily: z.fontFamily || 'Arial'
-        })),
-        droppedItems: {},
-        selectedElement: null
-      },
-      back: {
-        dropZones: layout.back.map(z => ({
-          ...z,
-          hidden: z.hidden || false,
-          textColor: z.textColor || 'black',
-          fontFamily: z.fontFamily || 'Arial'
-        })),
-        droppedItems: {},
-        selectedElement: null
-      }
-    };
+    const savedConfig = this.loadSavedConfiguration();
+    
+    if (savedConfig) {
+      this.pageStates = {
+        front: {
+          dropZones: layout.front.map(defaultZone => {
+            const savedZone = savedConfig.front.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
+            return savedZone ? { 
+              ...defaultZone,
+              position: savedZone.position || defaultZone.position,
+              hidden: savedZone.hidden !== undefined ? savedZone.hidden : defaultZone.hidden,
+              textColor: savedZone.textColor || defaultZone.textColor || 'black',
+              fontFamily: savedZone.fontFamily || defaultZone.fontFamily || 'Arial' // Corrección clave aquí
+            } : defaultZone;
+          }),
+          droppedItems: {},
+          selectedElement: null
+        },
+        back: {
+          dropZones: layout.back.map(defaultZone => {
+            const savedZone = savedConfig.back.dropZones.find(z => z.fieldKey === defaultZone.fieldKey);
+            return savedZone ? { 
+              ...defaultZone,
+              position: savedZone.position || defaultZone.position,
+              hidden: savedZone.hidden !== undefined ? savedZone.hidden : defaultZone.hidden,
+              textColor: savedZone.textColor || defaultZone.textColor || 'black',
+              fontFamily: savedZone.fontFamily || defaultZone.fontFamily || 'Arial' // Corrección clave aquí
+            } : defaultZone;
+          }),
+          droppedItems: {},
+          selectedElement: null
+        }
+      };
+    } else {
+      this.pageStates = {
+        front: {
+          dropZones: layout.front.map(z => ({
+            ...z,
+            hidden: z.hidden || false,
+            textColor: z.textColor || 'black',
+            fontFamily: z.fontFamily || 'Arial'
+          })),
+          droppedItems: {},
+          selectedElement: null
+        },
+        back: {
+          dropZones: layout.back.map(z => ({
+            ...z,
+            hidden: z.hidden || false,
+            textColor: z.textColor || 'black',
+            fontFamily: z.fontFamily || 'Arial'
+          })),
+          droppedItems: {},
+          selectedElement: null
+        }
+      };
+    }
   }
+  private loadSavedConfiguration(): PageStates | null {
+    try {
+      const savedConfig = localStorage.getItem('certificate-config');
+      if (savedConfig) {
+        const allConfigs = JSON.parse(savedConfig);
+        return allConfigs[this.certificateType];
+      }
+    } catch (error) {
+      console.error('Error loading saved configuration:', error);
+    }
+    return null;
+  }
+
+  saveConfiguration(): void {
+    try {
+      // Load all existing configurations
+      let allConfigs = {};
+      try {
+        const savedConfig = localStorage.getItem('certificate-config');
+        if (savedConfig) {
+          allConfigs = JSON.parse(savedConfig);
+        }
+      } catch (error) {
+        console.error('Error loading existing configurations:', error);
+      }
+
+      // Create a copy of the current state without the selectedElement
+      const configToSave = {
+        front: {
+          ...this.pageStates.front,
+          selectedElement: null,
+          droppedItems: {},
+          dropZones: this.pageStates.front.dropZones.map(zone => ({
+            ...zone,
+            position: { ...zone.position },
+            hidden: zone.hidden,
+            textColor: zone.textColor,
+            fontFamily: zone.fontFamily,
+            fieldKey: zone.fieldKey
+            
+          }))
+        },
+        back: {
+          ...this.pageStates.back,
+          selectedElement: null,
+          droppedItems: {},
+          dropZones: this.pageStates.back.dropZones.map(zone => ({
+            ...zone,
+            position: { ...zone.position },
+            hidden: zone.hidden,
+            textColor: zone.textColor,
+            fontFamily: zone.fontFamily,
+            fieldKey: zone.fieldKey
+          }))
+        }
+      };
+
+      // Update the configuration for the current type
+      allConfigs = {
+        ...allConfigs,
+        [this.certificateType]: configToSave
+      };
+
+      // Save all configurations
+      localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
+
+      alert('Configuración guardada exitosamente');
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      alert('Error al guardar la configuración');
+    }
+  }
+
 
   get currentPageState(): PageState {
     return this.pageStates[this.currentPageId];
@@ -508,7 +615,16 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   changeCertificateType(type: 'curso' | 'diplomado' | 'constancia'): void {
     if (this.certificateType !== type) {
       this.certificateType = type;
-      this.initializePageStates();
+      
+      // Try to load saved configuration for the new type
+      const savedConfig = this.loadSavedConfiguration();
+      
+      if (savedConfig) {
+        this.pageStates = savedConfig;
+      } else {
+        this.initializePageStates();
+      }
+      
       if (type === 'constancia') {
         this.currentPageId = 'front';
       }
