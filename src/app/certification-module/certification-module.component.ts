@@ -658,16 +658,36 @@ private getOriginalValue(fieldKey: string, student: Certificado): string {
             return student.codigo.split('-')[0];
         case 'codigoCertificado':
             return student.iIdCertificado.toString();
-        case 'nota':
-          return student.nota !== undefined && student.nota !== null 
-          ? String(student.nota) 
-          : 'Aprobado';        case 'emisionFormat':
+            case 'nota':
+              if (student.nota !== undefined && student.nota !== null) {
+                const numericValue = Number(student.nota);
+                // Formatear a dos decimales
+                const formatted = numericValue.toFixed(2);
+                // Obtener parte entera y convertir a texto
+                const integerPart = Math.floor(numericValue);
+                const textValue = this.numberToSpanish(integerPart);
+                return `${formatted} (${textValue} y 00/20)`;
+              }
+              return 'Aprobado';
+          case 'emisionFormat':
             return this.fechaAFormatoLegible(student.emisionFormat);
         case 'fechaFormat':
             return this.fechaAFormatoLegible(student.fechaFormat);
         default:
             return student[fieldKey as keyof Certificado]?.toString() || '';
     }
+}
+
+private numberToSpanish(num: number): string {
+  const unidades = [
+    'Cero', 'Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco', 
+    'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez',
+    'Once', 'Doce', 'Trece', 'Catorce', 'Quince',
+    'Dieciséis', 'Diecisiete', 'Dieciocho', 'Diecinueve', 'Veinte'
+  ];
+  
+  if (num >= 0 && num <= 20) return unidades[num];
+  return num.toString(); // Fallback para valores fuera de rango
 }
 
 // certification-module.component.ts
@@ -731,25 +751,26 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
     document.body.style.cursor = 'grabbing';
   }
 
-@HostListener('document:mousemove', ['$event'])
-onMouseMove(event: MouseEvent): void {
-  if (this.draggingZone) {
-    const rect = this.certificateRef.nativeElement.getBoundingClientRect();
-    const scale = this.zoomLevel;
-    const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
-    const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
-    
-    // Mantener la posición dentro de los límites del certificado
-    const maxX = this.certSize.width - 100; // Ancho mínimo del drop-zone
-    const maxY = this.certSize.height - 50; // Alto mínimo
-    
-    this.handleDropZoneMove(
-      this.draggingZone.id,
-      Math.max(0, Math.min(newX, maxX)),
-      Math.max(0, Math.min(newY, maxY))
-    );
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    if (this.draggingZone) {
+      const rect = this.certificateRef.nativeElement.getBoundingClientRect();
+      const scale = this.zoomLevel;
+      const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
+      const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
+      
+      // Ajustar límites para mejor manejo en zoom muy pequeño
+      const maxX = this.certSize.width - (100 * (1/this.zoomLevel)); 
+      const maxY = this.certSize.height - (50 * (1/this.zoomLevel));
+      
+      this.handleDropZoneMove(
+        this.draggingZone.id,
+        Math.max(0, Math.min(newX, maxX)),
+        Math.max(0, Math.min(newY, maxY))
+      );
+    }
   }
-}
+  
 
   @HostListener('document:mouseup')
   onMouseUp(): void {
@@ -970,7 +991,7 @@ onMouseMove(event: MouseEvent): void {
   }
 
   handleZoomOut(): void {
-    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.5);
+    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.1); // 10% mínimo
     this.cdr.detectChanges();
   }
 
