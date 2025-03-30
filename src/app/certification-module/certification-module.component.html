@@ -20,8 +20,8 @@
     </div>
   </div>
   
-  <div class="cert-content">
-    <div class="left-panel">
+  <div class="main-content">
+    <div class="sidebar">
       <div class="controls-section">
         <div class="certificate-type-selector">
           <h3>Tipo de Documento</h3>
@@ -74,14 +74,30 @@
           >
             Vista Frontal
           </button>
-
           <button
-          (click)="showBackTemplate()"
-          [class.active]="currentPageId === 'back'"
-        >
-          Vista trasera
-        </button>
+            (click)="showBackTemplate()"
+            [class.active]="currentPageId === 'back'"
+          >
+            Vista trasera
+          </button>
+        </div>
 
+        <div class="zoom-controls">
+          <button
+            class="zoom-button"
+            (click)="handleZoomOut()"
+            [disabled]="zoomLevel <= 0.5"
+          >
+            <i class="icon-zoom-out">-</i>
+          </button>
+          <span>{{ (zoomLevel * 100).toFixed(0) }}%</span>
+          <button
+            class="zoom-button"
+            (click)="handleZoomIn()"
+            [disabled]="zoomLevel >= 2"
+          >
+            <i class="icon-zoom-in">+</i>
+          </button>
         </div>
 
         <div class="export-controls">
@@ -92,181 +108,196 @@
             <i class="icon-save"></i> Guardar Configuración
           </button>
         </div>
-
-        <div class="zoom-controls">
-          <button
-            class="zoom-button"
-            (click)="handleZoomOut()"
-            [disabled]="zoomLevel <= 0.5"
-          >
-            <i class="icon-zoom-out"></i>
-          </button>
-          <span>{{ (zoomLevel * 100).toFixed(0) }}%</span>
-          <button
-            class="zoom-button"
-            (click)="handleZoomIn()"
-            [disabled]="zoomLevel >= 2"
-          >
-            <i class="icon-zoom-in"></i>
-          </button>
-        </div>
       </div>
 
-      <div class="fields-list">
-        <h3>Campos Disponibles</h3>
-        <div
-          *ngFor="let zone of currentPageState.dropZones"
-          class="field-item"
-          [class.hidden]="zone.hidden"
-          [class.selected]="currentPageState.selectedElement?.id === zone.id"
-          (click)="handleSelectElement('dropZone', zone.id)"
-        >
-          <div class="field-header">
-            <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
-            <div class="field-controls">
-              <button
-                class="control-btn"
-                (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
-              >
-                <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-              </button>
+      <div class="fields-panel">
+        <div class="available-fields">
+          <h3>Campos Disponibles</h3>
+          <div class="fields-container">
+            <div *ngFor="let field of availableFields" 
+                class="field-item draggable"
+                [attr.data-field-key]="field.key"
+                draggable="true"
+                (dragstart)="onDragStart($event, field)"
+                (dragend)="onDragEnd($event)">
+              <div class="field-header">
+                <span class="field-name">{{ getFieldLabel(field.key) }}</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="field-content">
-            <div class="style-group">
-              <label>Texto adicional:</label>
-              <input
-                type="text"
-                class="content-edit"
-                [(ngModel)]="zone.customPrefix"
-                (ngModelChange)="onContentChange(zone.id)"
-                (click)="$event.stopPropagation()"
-                placeholder="Prefijo (ej: Estimado)"
-              >
-            </div>
+        <div class="fields-list">
+          <h3>Campos en Uso</h3>
+          <div class="fields-list-container" #fieldsListContainer>
+            <div
+              *ngFor="let zone of currentPageState.dropZones"
+              class="field-item"
+              [id]="'field-item-' + zone.id"
+              [class.hidden]="zone.hidden"
+              [class.selected]="currentPageState.selectedElement?.id === zone.id"
+              (click)="handleSelectElement('dropZone', zone.id)"
+            >
+              <div class="field-header">
+                <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
+                <div class="field-controls">
+                  <button
+                    class="control-btn"
+                    (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
+                    [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
+                  >
+                    <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+                  </button>
+                </div>
+              </div>
 
-            <div class="style-group">
-              <label>Texto posterior:</label>
-              <input
-                type="text"
-                class="content-edit"
-                [(ngModel)]="zone.customSuffix"
-                (ngModelChange)="onContentChange(zone.id)"
-                (click)="$event.stopPropagation()"
-                placeholder="Sufijo (ej: Saludos)"
-              >
-            </div>
+              <div class="field-content">
+                <div class="style-group">
+                  <label>Texto adicional:</label>
+                  <input
+                    type="text"
+                    class="content-edit"
+                    [(ngModel)]="zone.customPrefix"
+                    (ngModelChange)="onContentChange(zone.id)"
+                    (click)="$event.stopPropagation()"
+                    placeholder="Prefijo (ej: Estimado)"
+                  >
+                </div>
 
-            <div class="style-group">
-              <label>Color:</label>
-              <button
-                class="color-btn"
-                [class.active]="zone.textColor === 'black'"
-                (click)="toggleTextColor(zone.id); $event.stopPropagation()"
-                [title]="zone.textColor === 'black' ? 'Cambiar a texto blanco' : 'Cambiar a texto negro'"
-              >
-                <span
-                  class="color-preview"
-                  [style.background]="zone.textColor"
-                ></span>
-                {{ zone.textColor === "black" ? "Negro" : "Blanco" }}
-              </button>
-            </div>
-            <div class="style-group">
-              <label>Cursiva:</label>
-              <button
-                class="color-btn"
-                [class.active]="zone.isItalic"
-                (click)="toggleItalic(zone.id); $event.stopPropagation()"
-                title="Alternar cursiva"
-              >
-                <i class="icon-italic">I</i>
-              </button>
-            </div>
-            <div class="style-group">
-              <label>Tamaño fuente:</label>
-              <input
-                type="number"
-                class="content-edit"
-                [(ngModel)]="zone.fontSize"
-                (ngModelChange)="onContentChange(zone.id)"
-                (click)="$event.stopPropagation()"
-                min="8"
-                max="120"
-                step="1"
-              >
-            </div>
+                <div class="style-group">
+                  <label>Texto posterior:</label>
+                  <input
+                    type="text"
+                    class="content-edit"
+                    [(ngModel)]="zone.customSuffix"
+                    (ngModelChange)="onContentChange(zone.id)"
+                    (click)="$event.stopPropagation()"
+                    placeholder="Sufijo (ej: Saludos)"
+                  >
+                </div>
 
-            <div class="style-group">
-              <label>Fuente:</label>
-              <select
-                class="font-select"
-                [(ngModel)]="zone.fontFamily"
-                (ngModelChange)="onFontChange(zone.id, $event)"
-                (click)="$event.stopPropagation()"
-              >
- 
-                <option *ngFor="let font of availableFonts" [value]="font">
-                  {{ font }}
-                </option>
-              </select>
+                <div class="field-styling">
+                  <div class="style-row">
+                    <div class="style-group">
+                      <label>Color:</label>
+                      <button
+                        class="color-btn"
+                        [class.active]="zone.textColor === 'black'"
+                        (click)="toggleTextColor(zone.id); $event.stopPropagation()"
+                      >
+                        <span
+                          class="color-preview"
+                          [style.background]="zone.textColor"
+                        ></span>
+                        {{ zone.textColor === "black" ? "Negro" : "Blanco" }}
+                      </button>
+                    </div>
+                    
+                    <div class="style-group">
+                      <label>Cursiva:</label>
+                      <button
+                        class="color-btn"
+                        [class.active]="zone.isItalic"
+                        (click)="toggleItalic(zone.id); $event.stopPropagation()"
+                      >
+                        <i class="icon-italic">I</i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="style-row">
+                    <div class="style-group">
+                      <label>Tamaño:</label>
+                      <input
+                        type="number"
+                        class="content-edit size-input"
+                        [(ngModel)]="zone.fontSize"
+                        (ngModelChange)="onContentChange(zone.id)"
+                        (click)="$event.stopPropagation()"
+                        min="8"
+                        max="120"
+                        step="1"
+                      >
+                    </div>
+
+                    <div class="style-group">
+                      <label>Fuente:</label>
+                      <select
+                        class="font-select"
+                        [(ngModel)]="zone.fontFamily"
+                        (ngModelChange)="onFontChange(zone.id, $event)"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <option *ngFor="let font of availableFonts" [value]="font">
+                          {{ font }}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="certificate-preview" #certificateContainerRef>
-      <div class="certificate-container">
-        <div
-          class="certificate-content"
-          [style.transform]="'scale(' + zoomLevel + ')'"
-          [style.width.px]="selectedCert?.dimensions?.width || certSize.width"
-          [style.height.px]="selectedCert?.dimensions?.height || certSize.height"
-        >
+    <div class="preview-panel">
+      <div class="certificate-preview" #certificateContainerRef>
+        <div class="certificate-container" 
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event)">
           <div
-            class="certificate-background"
-            #certificateRef
-            [style.backgroundImage]="'url(' + (selectedCert?.cloudUrl || '') + ')'"
+            class="certificate-content"
+            [style.transform]="'scale(' + zoomLevel + ')'"
             [style.width.px]="selectedCert?.dimensions?.width || certSize.width"
             [style.height.px]="selectedCert?.dimensions?.height || certSize.height"
-          ></div>
-
-          <div
-            *ngFor="let zone of currentPageState.dropZones"
-            class="drop-zone"
-            [class.selected]="currentPageState.selectedElement?.id === zone.id"
-            [class.hidden]="zone.hidden"
-            [style.left.px]="zone.position.x"
-            [style.top.px]="zone.position.y"
-            [style.color]="zone.textColor"
-            [style.fontFamily]="zone.fontFamily"
-            (mousedown)="startDraggingZone($event, zone)"
-            (click)="handleSelectElement('dropZone', zone.id)"
           >
-            <div class="zone-content" [style.fontStyle]="zone.isItalic ? 'italic' : 'normal'" [style.fontSize.px]="zone.fontSize">
-              
-              <ng-container *ngIf="zone.type === 'dates'; else textField">
-                <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
-                  {{ line }}
-                </div>
-              </ng-container>
+            <div
+              class="certificate-background"
+              #certificateRef
+              [style.backgroundImage]="'url(' + (selectedCert?.cloudUrl || '') + ')'"
+              [style.width.px]="selectedCert?.dimensions?.width || certSize.width"
+              [style.height.px]="selectedCert?.dimensions?.height || certSize.height"
+            ></div>
 
-              <ng-template #textField>
-                {{ getStudentDataForZone(zone.fieldKey) }}
-              </ng-template>
-            </div>
+            <div
+              *ngFor="let zone of currentPageState.dropZones"
+              class="drop-zone"
+              [class.selected]="currentPageState.selectedElement?.id === zone.id"
+              [class.hidden]="zone.hidden"
+              [style.left.px]="zone.position.x"
+              [style.top.px]="zone.position.y"
+              [style.color]="zone.textColor"
+              [style.fontFamily]="zone.fontFamily"
+              (mousedown)="startDraggingZone($event, zone)"
+              (click)="handleSelectElement('dropZone', zone.id)"
+            >
+            <div class="zone-content" 
+            [style.font-style]="zone.isItalic ? 'italic' : 'normal'"
+            [style.font-size.px]="zone.fontSize"
+            [style.color]="zone.textColor"
+            [style.font-family]="zone.fontFamily">
+                <ng-container *ngIf="zone.type === 'dates'; else textField">
+                  <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
+                    {{ line }}
+                  </div>
+                </ng-container>
 
-            <div class="drop-zone-controls">
-              <button
-                (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                class="visibility-toggle"
-                [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
-              >
-                <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-              </button>
+                <ng-template #textField>
+                  {{ getStudentDataForZone(zone.fieldKey) }}
+                </ng-template>
+              </div>
+
+              <div class="drop-zone-controls">
+                <button
+                  (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
+                  class="visibility-toggle"
+                  [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
+                >
+                  <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>

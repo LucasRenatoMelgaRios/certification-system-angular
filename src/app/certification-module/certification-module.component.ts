@@ -18,6 +18,7 @@ import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, C
 export class CertificationModuleComponent implements OnInit, AfterViewInit {
   @ViewChild('certificateRef') certificateRef!: ElementRef;
   @ViewChild('certificateContainerRef') certificateContainerRef!: ElementRef;
+  @ViewChild('fieldsListContainer') fieldsListContainer!: ElementRef;
 
   currentPageId: 'front' | 'back' = 'front';
   currentTemplateHasSignature = false;
@@ -37,6 +38,23 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   };
   certificados: Certificado[] = [];
   availableFonts = AVAILABLE_FONTS;
+  availableFields: { key: string; label: string; }[] = [
+    { key: 'nombre', label: 'Nombre completo' },
+    { key: 'apellido', label: 'Apellidos' },
+    { key: 'curso', label: 'Nombre del curso' },
+    { key: 'descripcion', label: 'Descripción y fechas' },
+    { key: 'descripcion2', label: 'Fecha y horas lectivas' },
+    { key: 'ihrlectiva', label: 'Horas lectivas' },
+    { key: 'emisionFormat', label: 'Fecha de emisión' },
+    { key: 'fechaFormat', label: 'Fecha de expedición' },
+    { key: 'dni', label: 'DNI' },
+    { key: 'codigo', label: 'Código del curso' },
+    { key: 'iIdCertificado', label: 'Código de certificado' },
+    { key: 'nota', label: 'Calificación' }
+  ];
+
+  private draggedField: any = null;
+
 
   constructor(
     private certificateService: CertificateService,
@@ -67,74 +85,126 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   
   private initializePageStates(): void {
-    const layout = CERTIFICATE_LAYOUTS[this.certificateType];
     const savedConfig = this.loadSavedConfiguration();
-    
-    const processZones = (zones: any[], defaultZones: any[]) => {
-        return defaultZones.map(defaultZone => {
-            const savedZone = zones.find((z: any) => z.fieldKey === defaultZone.fieldKey);
-            return {
-                ...defaultZone,
-                position: savedZone?.position || defaultZone.position,
-                hidden: savedZone?.hidden ?? defaultZone.hidden ?? false,
-                textColor: savedZone?.textColor || defaultZone.textColor || 'black',
-                fontFamily: savedZone?.fontFamily || defaultZone.fontFamily || 'Arial',
-                isItalic: savedZone?.isItalic ?? defaultZone.isItalic ?? false, // Nuevo campo
-                fontSize: savedZone?.fontSize || defaultZone.fontSize || 52, // Valor por defecto 52
-                customPrefix: savedZone?.customPrefix || '',
-                customSuffix: savedZone?.customSuffix || ''
-            };
-        });
-    };
-
+    const layout = CERTIFICATE_LAYOUTS[this.certificateType];
+  
     if (savedConfig) {
-        this.pageStates = {
-            front: {
-                dropZones: processZones(savedConfig.front.dropZones, layout.front),
-                droppedItems: {},
-                selectedElement: null
-            },
-            back: {
-                dropZones: savedConfig.back ? 
-                    processZones(savedConfig.back.dropZones, layout.back) : 
-                    layout.back.map(z => ({ ...z, customPrefix: '', customSuffix: '' })),
-                droppedItems: {},
-                selectedElement: null
-            }
-        };
+      this.pageStates = {
+        front: {
+          dropZones: this.mergeZones(savedConfig.front?.dropZones || [], []),
+          droppedItems: {},
+          selectedElement: null
+        },
+        back: {
+          dropZones: this.mergeZones(savedConfig.back?.dropZones || [], []),
+          droppedItems: {},
+          selectedElement: null
+        }
+      };
     } else {
-        this.pageStates = {
-            front: {
-                dropZones: layout.front.map(z => ({
-                    ...z,
-                    hidden: z.hidden ?? false,
-                    textColor: z.textColor || 'black',
-                    fontFamily: z.fontFamily || 'Arial',
-                    isItalic: z.isItalic ?? false, // Nuevo campo
-                    customPrefix: '',
-                    customSuffix: ''
-                })),
-                droppedItems: {},
-                selectedElement: null
-            },
-            back: {
-                dropZones: layout.back.map(z => ({
-                    ...z,
-                    hidden: z.hidden ?? false,
-                    textColor: z.textColor || 'black',
-                    fontFamily: z.fontFamily || 'Arial',
-                    isItalic: z.isItalic ?? false, // Nuevo campo
-                    customPrefix: '',
-                    customSuffix: ''
-                })),
-                droppedItems: {},
-                selectedElement: null
-            }
-        };
+      // Inicializar vacío en lugar de usar el layout
+      this.pageStates = {
+        front: {
+          dropZones: [],
+          droppedItems: {},
+          selectedElement: null
+        },
+        back: {
+          dropZones: [],
+          droppedItems: {},
+          selectedElement: null
+        }
+      };
     }
+  }
+  
+  private mergeZones(savedZones: any[], defaultZones: any[]): any[] {
+    return savedZones.map(savedZone => ({
+      ...savedZone,
+      pageId: savedZone.pageId || this.currentPageId,
+      position: savedZone.position,
+      hidden: savedZone.hidden ?? false,
+      textColor: savedZone.textColor || 'black',
+      fontFamily: savedZone.fontFamily || 'Arial'
+    }));
+  }
 
-    setTimeout(() => this.cdr.detectChanges(), 0);
-}
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const container = event.currentTarget as HTMLElement;
+    container.classList.remove('drag-over');
+  
+    if (!this.draggedField) return;
+  
+    // Asegurar que exista el estado de la página actual
+    if (!this.pageStates[this.currentPageId]) {
+      this.pageStates[this.currentPageId] = {
+        dropZones: [],
+        droppedItems: {},
+        selectedElement: null
+      };
+    }
+  
+    const currentPage = this.pageStates[this.currentPageId];
+  
+    // Inicializar dropZones si no existe
+    if (!currentPage.dropZones) {
+      currentPage.dropZones = [];
+    }
+  
+    // Verificar duplicados
+    const existingZone = currentPage.dropZones.find(
+      z => z.fieldKey === this.draggedField.key
+    );
+    
+    if (existingZone) {
+      this.showNotification('Este campo ya está en uso', 'error');
+      return;
+    }
+  
+    // Cálculo de posición
+    const rect = container.getBoundingClientRect();
+    const scale = this.zoomLevel;
+    const x = (event.clientX - rect.left) / scale;
+    const y = (event.clientY - rect.top) / scale;
+  
+    // Crear nuevo dropzone
+    const newZone: DropZone = {
+      id: Date.now(),
+      fieldKey: this.draggedField.key,
+      position: { x, y },
+      pageId: this.currentPageId,
+      type: this.draggedField.key === 'descripcion' ? 'dates' : 'text',
+      textColor: 'black',
+      fontFamily: 'Arial',
+      fontSize: 52,
+      isItalic: false
+    };
+  
+    currentPage.dropZones.push(newZone);
+    this.cdr.detectChanges();
+  }
+
+  onDragStart(event: DragEvent, field: any): void {
+    this.draggedField = field;
+    event.dataTransfer?.setData('text/plain', field.key);
+  }
+
+  onDragEnd(event: DragEvent): void {
+    this.draggedField = null;
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    const container = event.currentTarget as HTMLElement;
+    container.classList.add('drag-over');
+  }
+
+  onDragLeave(event: DragEvent): void {
+    const container = event.currentTarget as HTMLElement;
+    container.classList.remove('drag-over');
+  }
+
   onFontChange(zoneId: number, font: string): void {
     const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
     if (zone) {
@@ -144,76 +214,86 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
 
   
-  
   private loadSavedConfiguration(): PageStates | null {
     try {
       const savedConfig = localStorage.getItem('certificate-config');
       if (savedConfig) {
-        const allConfigs = JSON.parse(savedConfig);
-        return allConfigs[this.certificateType];
+        const allConfigs: Record<string, PageStates> = JSON.parse(savedConfig);
+        return allConfigs[this.certificateType] || null;
       }
     } catch (error) {
-      console.error('Error loading saved configuration:', error);
+      console.error('Error cargando configuración:', error);
     }
     return null;
   }
-
   saveConfiguration(): void {
     try {
-      let allConfigs: Record<string, any> = {};
-      const savedConfig = localStorage.getItem('certificate-config');
-      if (savedConfig) {
-        allConfigs = JSON.parse(savedConfig);
-      }
+      const allConfigs: Record<string, PageStates> = JSON.parse(
+        localStorage.getItem('certificate-config') || '{}'
+      );
   
-      const configToSave = {
+      // Guardar configuración completa del tipo actual
+      allConfigs[this.certificateType] = {
         front: {
-          ...this.pageStates.front,
-          selectedElement: null,
-          droppedItems: {},
           dropZones: this.pageStates.front.dropZones.map(zone => ({
+            pageId: 'front', // <-- Añadir pageId
             id: zone.id,
             fieldKey: zone.fieldKey,
-            position: { x: zone.position.x, y: zone.position.y },
+            position: zone.position,
             type: zone.type,
-            hidden: zone.hidden ?? false,
-            textColor: zone.textColor || 'black',
-            fontFamily: zone.fontFamily || 'Arial',
-            isItalic: zone.isItalic ?? false,
-            fontSize: zone.fontSize || 52, // Guardar el tamaño actual
-            customPrefix: zone.customPrefix || '',
-            customSuffix: zone.customSuffix || ''
-          }))
+            hidden: zone.hidden,
+            textColor: zone.textColor,
+            fontFamily: zone.fontFamily,
+            isItalic: zone.isItalic,
+            fontSize: zone.fontSize,
+            customPrefix: zone.customPrefix,
+            customSuffix: zone.customSuffix
+          })),
+          droppedItems: {},
+          selectedElement: null
         },
         back: {
-          ...this.pageStates.back,
-          selectedElement: null,
-          droppedItems: {},
           dropZones: this.pageStates.back.dropZones.map(zone => ({
+            pageId: 'back', // <-- Añadir pageId
             id: zone.id,
             fieldKey: zone.fieldKey,
-            position: { x: zone.position.x, y: zone.position.y },
+            position: zone.position,
             type: zone.type,
-            hidden: zone.hidden ?? false,
-            textColor: zone.textColor || 'black',
-            fontFamily: zone.fontFamily || 'Arial',
-            isItalic: zone.isItalic ?? false,
-            fontSize: zone.fontSize || 52, // Guardar el tamaño actual
-            customPrefix: zone.customPrefix || '',
-            customSuffix: zone.customSuffix || ''
-          }))
+            hidden: zone.hidden,
+            textColor: zone.textColor,
+            fontFamily: zone.fontFamily,
+            isItalic: zone.isItalic,
+            fontSize: zone.fontSize,
+            customPrefix: zone.customPrefix,
+            customSuffix: zone.customSuffix
+          })),
+          droppedItems: {},
+          selectedElement: null
         }
       };
   
-      allConfigs[this.certificateType] = configToSave;
       localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
-  
       this.showNotification('Configuración guardada exitosamente', 'success');
-      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error guardando configuración:', error);
       this.showNotification('Error al guardar la configuración', 'error');
     }
+  }
+  
+  private getSanitizedPageState(pageId: 'front' | 'back'): any {
+    return this.pageStates[pageId].dropZones.map(zone => ({
+      id: zone.id,
+      fieldKey: zone.fieldKey,
+      position: { x: zone.position.x, y: zone.position.y },
+      type: zone.type,
+      hidden: zone.hidden ?? false,
+      textColor: zone.textColor || 'black',
+      fontFamily: zone.fontFamily || 'Arial',
+      isItalic: zone.isItalic ?? false,
+      fontSize: zone.fontSize || 52,
+      customPrefix: zone.customPrefix || '',
+      customSuffix: zone.customSuffix || ''
+    }));
   }
 
 private showNotification(message: string, type: 'success' | 'error'): void {
@@ -221,21 +301,14 @@ private showNotification(message: string, type: 'success' | 'error'): void {
     alert(`${type.toUpperCase()}: ${message}`);
 }
 
-// Métodos auxiliares para mostrar mensajes (opcional)
-private showSuccessMessage(message: string): void {
-    // Puedes implementar un toast o alerta bonita aquí
-    alert(message);
+
+get currentPageState(): PageState {
+  return this.pageStates[this.currentPageId] || {
+    dropZones: [],
+    droppedItems: {},
+    selectedElement: null
+  };
 }
-
-private showErrorMessage(message: string): void {
-    // Puedes implementar un toast o alerta de error aquí
-    alert(message);
-}
-
-
-  get currentPageState(): PageState {
-    return this.pageStates[this.currentPageId];
-  }
 
   get frontTemplates(): CertTemplate[] {
     return this.certTemplates
@@ -266,11 +339,10 @@ private showErrorMessage(message: string): void {
   onContentChange(zoneId: number): void {
     const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
     if (zone) {
-        // Forzar actualización de la vista
-        this.cdr.markForCheck();
+      // Forzar actualización de la vista
+      this.cdr.detectChanges(); // ❌ cdRef -> ✅ cdr
     }
-}
-  
+  }
 
 toggleSignature(hasSignature: boolean): void {
   if (this.currentTemplateHasSignature !== hasSignature) {
@@ -565,7 +637,7 @@ toggleItalic(zoneId: number): void {
   const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
   if (zone) {
     zone.isItalic = !zone.isItalic;
-    this.cdr.detectChanges();
+    this.cdr.detectChanges(); // ❌ cdRef -> ✅ cdr
   }
 }
 
@@ -659,16 +731,25 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
     document.body.style.cursor = 'grabbing';
   }
 
-  @HostListener('document:mousemove', ['$event'])
-  onMouseMove(event: MouseEvent): void {
-    if (this.draggingZone) {
-      const rect = this.certificateRef.nativeElement.getBoundingClientRect();
-      const scale = this.zoomLevel;
-      const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
-      const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
-      this.handleDropZoneMove(this.draggingZone.id, newX, newY);
-    }
+@HostListener('document:mousemove', ['$event'])
+onMouseMove(event: MouseEvent): void {
+  if (this.draggingZone) {
+    const rect = this.certificateRef.nativeElement.getBoundingClientRect();
+    const scale = this.zoomLevel;
+    const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
+    const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
+    
+    // Mantener la posición dentro de los límites del certificado
+    const maxX = this.certSize.width - 100; // Ancho mínimo del drop-zone
+    const maxY = this.certSize.height - 50; // Alto mínimo
+    
+    this.handleDropZoneMove(
+      this.draggingZone.id,
+      Math.max(0, Math.min(newX, maxX)),
+      Math.max(0, Math.min(newY, maxY))
+    );
   }
+}
 
   @HostListener('document:mouseup')
   onMouseUp(): void {
@@ -837,7 +918,31 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
       id,
       pageId: this.currentPageId
     };
+    
     this.cdr.detectChanges();
+    
+    // Scroll automático después de la actualización de la vista
+    setTimeout(() => {
+      const element = document.getElementById(`field-item-${id}`);
+      if (element && this.fieldsListContainer?.nativeElement) {
+        const container = this.fieldsListContainer.nativeElement;
+        const elementRect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calcular posición relativa
+        const isVisible = (
+          elementRect.top >= containerRect.top &&
+          elementRect.bottom <= containerRect.bottom
+        );
+        
+        if (!isVisible) {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+        }
+      }
+    }, 50);
   }
 
   toggleZoneVisibility(id: number): void {
@@ -851,15 +956,7 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
   changeCertificateType(type: 'curso' | 'diplomado' | 'constancia'): void {
     if (this.certificateType !== type) {
       this.certificateType = type;
-      
-      // Try to load saved configuration for the new type
-      const savedConfig = this.loadSavedConfiguration();
-      
-      if (savedConfig) {
-        this.pageStates = savedConfig;
-      } else {
-        this.initializePageStates();
-      }
+      this.initializePageStates(); // Reinicializar con nuevo tipo
       
       if (type === 'constancia') {
         this.currentPageId = 'front';
@@ -867,7 +964,6 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
       this.cdr.detectChanges();
     }
   }
-
   handleZoomIn(): void {
     this.zoomLevel = Math.min(this.zoomLevel + 0.1, 2);
     this.cdr.detectChanges();
