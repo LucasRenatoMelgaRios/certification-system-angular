@@ -67,7 +67,8 @@ export interface Certificado {
   identidadCodigo: string;
   identidad: string;
   fechaFormat: string;
-  
+  configTemplate?: string; // Nuevo campo para almacenar configuraciones
+
   // Campos opcionales
   nota?: string | number; // Puede ser string o number según la API
   

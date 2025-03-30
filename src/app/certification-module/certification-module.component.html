@@ -131,7 +131,7 @@
           <h3>Campos en Uso</h3>
           <div class="fields-list-container" #fieldsListContainer>
             <div
-              *ngFor="let zone of currentPageState.dropZones"
+            *ngFor="let zone of currentPageState.dropZones; trackBy: trackByZoneId"
               class="field-item"
               [id]="'field-item-' + zone.id"
               [class.hidden]="zone.hidden"
@@ -304,4 +304,5 @@
       </div>
     </div>
   </div>
+
 </div>

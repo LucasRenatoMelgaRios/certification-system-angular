@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { CertTemplate, Certificado } from '../models/certificate.model';
 
 @Injectable({
@@ -10,8 +10,35 @@ import { CertTemplate, Certificado } from '../models/certificate.model';
 export class CertificateService {
   private apiTemplatesUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/certificados'; // Actualiza con tu endpoint real
   private apiStudentsUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/estudiante'; // Actualiza con tu endpoint real
+  private apiConfigUrl = 'https://67e8c749bdcaa2b7f5b7caf8.mockapi.io/config-templates/1';
 
   constructor(private http: HttpClient) { }
+
+
+  saveGlobalConfig(config: any): Observable<any> {
+    try {
+      const configString = JSON.stringify(config);
+      return this.http.put(this.apiConfigUrl, {
+        configTemplate: configString,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      return throwError(() => new Error('JSON inválido'));
+    }
+  }
+
+  getGlobalConfig(): Observable<any> {
+    return this.http.get(this.apiConfigUrl).pipe(
+      map((response: any) => {
+        try {
+          return response.configTemplate ? JSON.parse(response.configTemplate) : {};
+        } catch {
+          return {};
+        }
+      }),
+      catchError(() => of({})) // Devuelve objeto vacío si hay error
+    );
+  }
 
   /**
    * Obtiene todas las plantillas de certificados y las adapta al modelo interno

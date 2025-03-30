@@ -32,6 +32,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   dragOffsetX = 0;
   dragOffsetY = 0;
   certificateType: 'curso' | 'diplomado' | 'constancia' = 'curso';
+
   pageStates: PageStates = {
     front: { dropZones: [], droppedItems: {}, selectedElement: null },
     back: { dropZones: [], droppedItems: {}, selectedElement: null }
@@ -55,6 +56,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   private draggedField: any = null;
 
+  globalConfig: any = {};
 
   constructor(
     private certificateService: CertificateService,
@@ -66,6 +68,8 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     this.loadStudentData();
     this.determineCertificateType();
     this.initializePageStates();
+    this.loadGlobalConfig();
+
   }
 
   ngAfterViewInit(): void {
@@ -83,52 +87,49 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private loadGlobalConfig(): void {
+    this.certificateService.getGlobalConfig().subscribe({
+      next: (config) => {
+        this.globalConfig = config;
+        this.initializePageStates();
+      },
+      error: (err) => console.error('Error loading global config:', err)
+    });
+  }
+
   
   private initializePageStates(): void {
-    const savedConfig = this.loadSavedConfiguration();
-    const layout = CERTIFICATE_LAYOUTS[this.certificateType];
-  
-    if (savedConfig) {
-      this.pageStates = {
-        front: {
-          dropZones: this.mergeZones(savedConfig.front?.dropZones || [], []),
-          droppedItems: {},
-          selectedElement: null
-        },
-        back: {
-          dropZones: this.mergeZones(savedConfig.back?.dropZones || [], []),
-          droppedItems: {},
-          selectedElement: null
-        }
-      };
-    } else {
-      // Inicializar vacío en lugar de usar el layout
-      this.pageStates = {
-        front: {
-          dropZones: [],
-          droppedItems: {},
-          selectedElement: null
-        },
-        back: {
-          dropZones: [],
-          droppedItems: {},
-          selectedElement: null
-        }
-      };
-    }
+    const globalConfig = this.globalConfig[this.certificateType] || {};
+    
+    this.pageStates = {
+      front: {
+        dropZones: this.mergeZones(globalConfig.front || [], []),
+        droppedItems: {},
+        selectedElement: null
+      },
+      back: {
+        dropZones: this.mergeZones(globalConfig.back || [], []),
+        droppedItems: {},
+        selectedElement: null
+      }
+    };
   }
   
-  private mergeZones(savedZones: any[], defaultZones: any[]): any[] {
+  private mergeZones(savedZones: any[], defaultZones: any[]): DropZone[] {
     return savedZones.map(savedZone => ({
       ...savedZone,
+      id: savedZone.id || Date.now() + Math.random(), // IDs únicos persistentes
       pageId: savedZone.pageId || this.currentPageId,
-      position: savedZone.position,
       hidden: savedZone.hidden ?? false,
       textColor: savedZone.textColor || 'black',
-      fontFamily: savedZone.fontFamily || 'Arial'
+      fontFamily: savedZone.fontFamily || 'Arial',
+      fontSize: savedZone.fontSize || 52
     }));
   }
 
+  trackByZoneId(index: number, zone: DropZone): number {
+    return zone.id; // Usar el ID único para tracking
+  }
   onDrop(event: DragEvent): void {
     event.preventDefault();
     const container = event.currentTarget as HTMLElement;
@@ -154,8 +155,9 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   
     // Verificar duplicados
     const existingZone = currentPage.dropZones.find(
-      z => z.fieldKey === this.draggedField.key
+      z => z.fieldKey === this.draggedField.key && z.pageId === this.currentPageId
     );
+    
     
     if (existingZone) {
       this.showNotification('Este campo ya está en uso', 'error');
@@ -226,74 +228,53 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
     return null;
   }
+
   saveConfiguration(): void {
-    try {
-      const allConfigs: Record<string, PageStates> = JSON.parse(
-        localStorage.getItem('certificate-config') || '{}'
-      );
-  
-      // Guardar configuración completa del tipo actual
-      allConfigs[this.certificateType] = {
-        front: {
-          dropZones: this.pageStates.front.dropZones.map(zone => ({
-            pageId: 'front', // <-- Añadir pageId
-            id: zone.id,
-            fieldKey: zone.fieldKey,
-            position: zone.position,
-            type: zone.type,
-            hidden: zone.hidden,
-            textColor: zone.textColor,
-            fontFamily: zone.fontFamily,
-            isItalic: zone.isItalic,
-            fontSize: zone.fontSize,
-            customPrefix: zone.customPrefix,
-            customSuffix: zone.customSuffix
-          })),
-          droppedItems: {},
-          selectedElement: null
-        },
-        back: {
-          dropZones: this.pageStates.back.dropZones.map(zone => ({
-            pageId: 'back', // <-- Añadir pageId
-            id: zone.id,
-            fieldKey: zone.fieldKey,
-            position: zone.position,
-            type: zone.type,
-            hidden: zone.hidden,
-            textColor: zone.textColor,
-            fontFamily: zone.fontFamily,
-            isItalic: zone.isItalic,
-            fontSize: zone.fontSize,
-            customPrefix: zone.customPrefix,
-            customSuffix: zone.customSuffix
-          })),
-          droppedItems: {},
-          selectedElement: null
+    this.certificateService.getGlobalConfig().subscribe(existingConfig => {
+      const configToSave = {
+        ...existingConfig, // Mantenemos configs existentes
+        [this.certificateType]: {
+          front: this.getSanitizedConfig('front'),
+          back: this.getSanitizedConfig('back')
         }
       };
   
-      localStorage.setItem('certificate-config', JSON.stringify(allConfigs));
-      this.showNotification('Configuración guardada exitosamente', 'success');
-    } catch (error) {
-      console.error('Error guardando configuración:', error);
-      this.showNotification('Error al guardar la configuración', 'error');
-    }
+      this.certificateService.saveGlobalConfig(configToSave).subscribe({
+        next: () => this.showNotification('Configuración guardada', 'success'),
+        error: (err) => this.showNotification('Error al guardar', 'error')
+      });
+    });
   }
   
-  private getSanitizedPageState(pageId: 'front' | 'back'): any {
+  private getSanitizedConfig(pageId: 'front' | 'back'): any {
     return this.pageStates[pageId].dropZones.map(zone => ({
-      id: zone.id,
       fieldKey: zone.fieldKey,
-      position: { x: zone.position.x, y: zone.position.y },
+      position: zone.position,
       type: zone.type,
-      hidden: zone.hidden ?? false,
-      textColor: zone.textColor || 'black',
-      fontFamily: zone.fontFamily || 'Arial',
-      isItalic: zone.isItalic ?? false,
-      fontSize: zone.fontSize || 52,
-      customPrefix: zone.customPrefix || '',
-      customSuffix: zone.customSuffix || ''
+      hidden: zone.hidden,
+      textColor: zone.textColor,
+      fontFamily: zone.fontFamily,
+      isItalic: zone.isItalic,
+      fontSize: zone.fontSize,
+      customPrefix: zone.customPrefix,
+      customSuffix: zone.customSuffix
     }));
+  }
+
+
+  private sanitizeZone(zone: DropZone): any {
+    return {
+      fieldKey: zone.fieldKey,
+      position: zone.position,
+      type: zone.type,
+      hidden: zone.hidden,
+      textColor: zone.textColor,
+      fontFamily: zone.fontFamily,
+      isItalic: zone.isItalic,
+      fontSize: zone.fontSize,
+      customPrefix: zone.customPrefix,
+      customSuffix: zone.customSuffix
+    };
   }
 
 private showNotification(message: string, type: 'success' | 'error'): void {
@@ -476,8 +457,11 @@ private createFallbackTemplates(): CertTemplate[] {
   private loadStudentData(): void {
     this.certificateService.getStudentData().subscribe({
       next: (students) => {
-        if (students && students.length > 0) {
-          this.certificados = students;
+        this.certificados = students;
+        // Aplicar configuración específica del estudiante si es necesaria
+        if (students[0]?.configTemplate) {
+          const studentConfig = JSON.parse(students[0].configTemplate);
+          this.applyStudentSpecificConfig(studentConfig);
         }
       },
       error: (err) => {
@@ -525,6 +509,10 @@ private createFallbackTemplates(): CertTemplate[] {
         }];
       }
     });
+  }
+
+  private applyStudentSpecificConfig(config: any): void {
+    // Lógica para aplicar configuraciones específicas si es necesario
   }
 
   private loadTemplateImage(imageUrl: string): Promise<HTMLImageElement> {
@@ -746,8 +734,11 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
     this.draggingZone = zone;
     const rect = this.certificateRef.nativeElement.getBoundingClientRect();
     const scale = this.zoomLevel;
+    
+    // Calcular offset relativo al elemento
     this.dragOffsetX = (event.clientX - rect.left) / scale - zone.position.x;
     this.dragOffsetY = (event.clientY - rect.top) / scale - zone.position.y;
+    
     document.body.style.cursor = 'grabbing';
   }
 
@@ -756,17 +747,15 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
     if (this.draggingZone) {
       const rect = this.certificateRef.nativeElement.getBoundingClientRect();
       const scale = this.zoomLevel;
-      const newX = ((event.clientX - rect.left) / scale) - this.dragOffsetX;
-      const newY = ((event.clientY - rect.top) / scale) - this.dragOffsetY;
       
-      // Ajustar límites para mejor manejo en zoom muy pequeño
-      const maxX = this.certSize.width - (100 * (1/this.zoomLevel)); 
-      const maxY = this.certSize.height - (50 * (1/this.zoomLevel));
-      
+      // Cálculo preciso considerando desplazamiento
+      const newX = ((event.clientX - rect.left - this.dragOffsetX) / scale);
+      const newY = ((event.clientY - rect.top - this.dragOffsetY) / scale);
+  
       this.handleDropZoneMove(
         this.draggingZone.id,
-        Math.max(0, Math.min(newX, maxX)),
-        Math.max(0, Math.min(newY, maxY))
+        Math.max(0, newX),
+        Math.max(0, newY)
       );
     }
   }
@@ -779,9 +768,13 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
   }
 
   handleDropZoneMove(id: number, x: number, y: number): void {
-    this.currentPageState.dropZones = this.currentPageState.dropZones.map(zone =>
-      zone.id === id ? { ...zone, position: { x, y } } : zone
-    );
+    this.currentPageState.dropZones = this.currentPageState.dropZones.map(zone => {
+      if (zone.id === id) {
+        // Crear un nuevo objeto para evitar mutación
+        return { ...zone, position: { x, y } };
+      }
+      return zone;
+    });
     this.cdr.detectChanges();
   }
 
