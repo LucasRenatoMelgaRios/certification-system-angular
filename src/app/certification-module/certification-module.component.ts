@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { CertificateService } from '../services/certificate.service';
 
-import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, CERTIFICATE_LAYOUTS, AVAILABLE_FONTS 
+import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, AVAILABLE_FONTS 
 } from '../models/certificate.model';
 
 @Component({
@@ -103,12 +103,12 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     
     this.pageStates = {
       front: {
-        dropZones: this.mergeZones(globalConfig.front || [], []),
+        dropZones: this.mergeZones(globalConfig.front?.dropZones || [], []),
         droppedItems: {},
         selectedElement: null
       },
       back: {
-        dropZones: this.mergeZones(globalConfig.back || [], []),
+        dropZones: this.mergeZones(globalConfig.back?.dropZones || [], []),
         droppedItems: {},
         selectedElement: null
       }
@@ -116,20 +116,33 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   }
   
   private mergeZones(savedZones: any[], defaultZones: any[]): DropZone[] {
-    return savedZones.map(savedZone => ({
-      ...savedZone,
-      id: savedZone.id || Date.now() + Math.random(), // IDs únicos persistentes
-      pageId: savedZone.pageId || this.currentPageId,
-      hidden: savedZone.hidden ?? false,
-      textColor: savedZone.textColor || 'black',
-      fontFamily: savedZone.fontFamily || 'Arial',
-      fontSize: savedZone.fontSize || 52
-    }));
+    return savedZones.map(savedZone => {
+      // Asegurar que cada zona tenga su pageId correcto
+      const pageId = savedZone.pageId || this.currentPageId;
+      
+      return {
+        id: savedZone.id || Date.now() + Math.random(),
+        fieldKey: savedZone.fieldKey,
+        position: savedZone.position || { x: 0, y: 0 },
+        pageId: pageId,
+        type: savedZone.type || 'text',
+        hidden: savedZone.hidden ?? false,
+        textColor: savedZone.textColor || 'black',
+        fontFamily: savedZone.fontFamily || 'Arial',
+        fontSize: savedZone.fontSize || 52,
+        isItalic: savedZone.isItalic || false,
+        customPrefix: savedZone.customPrefix || '',
+        customSuffix: savedZone.customSuffix || '',
+        lineBreaks: savedZone.lineBreaks || 0 // Inicializado para ambas páginas
+      };
+    });
   }
 
   trackByZoneId(index: number, zone: DropZone): number {
     return zone.id; // Usar el ID único para tracking
   }
+
+
   onDrop(event: DragEvent): void {
     event.preventDefault();
     const container = event.currentTarget as HTMLElement;
@@ -137,40 +150,26 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   
     if (!this.draggedField) return;
   
-    // Asegurar que exista el estado de la página actual
-    if (!this.pageStates[this.currentPageId]) {
-      this.pageStates[this.currentPageId] = {
-        dropZones: [],
-        droppedItems: {},
-        selectedElement: null
-      };
-    }
+    const currentPage = this.pageStates[this.currentPageId] || {
+      dropZones: [],
+      droppedItems: {},
+      selectedElement: null
+    };
   
-    const currentPage = this.pageStates[this.currentPageId];
-  
-    // Inicializar dropZones si no existe
-    if (!currentPage.dropZones) {
-      currentPage.dropZones = [];
-    }
-  
-    // Verificar duplicados
     const existingZone = currentPage.dropZones.find(
       z => z.fieldKey === this.draggedField.key && z.pageId === this.currentPageId
     );
-    
-    
+  
     if (existingZone) {
       this.showNotification('Este campo ya está en uso', 'error');
       return;
     }
   
-    // Cálculo de posición
     const rect = container.getBoundingClientRect();
     const scale = this.zoomLevel;
     const x = (event.clientX - rect.left) / scale;
     const y = (event.clientY - rect.top) / scale;
   
-    // Crear nuevo dropzone
     const newZone: DropZone = {
       id: Date.now(),
       fieldKey: this.draggedField.key,
@@ -180,11 +179,35 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
       textColor: 'black',
       fontFamily: 'Arial',
       fontSize: 52,
-      isItalic: false
+      isItalic: false,
+      lineBreaks: 0 // Inicializado en 0
     };
   
     currentPage.dropZones.push(newZone);
     this.cdr.detectChanges();
+  }
+
+  addLineBreak(zoneId: number): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone) {
+      const maxBreaks = this.getMaxLineBreaks(zone);
+      const currentBreaks = zone.lineBreaks || 0;
+      
+      if (currentBreaks < maxBreaks) {
+        zone.lineBreaks = currentBreaks + 1;
+        this.cdr.detectChanges();
+        this.cdr.markForCheck();
+      }
+    }
+  }
+  
+  removeLineBreak(zoneId: number): void {
+    const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
+    if (zone && (zone.lineBreaks || 0) > 0) {
+      zone.lineBreaks--;
+      this.cdr.detectChanges();
+      this.cdr.markForCheck();
+    }
   }
 
   onDragStart(event: DragEvent, field: any): void {
@@ -603,6 +626,23 @@ private createFallbackTemplates(): CertTemplate[] {
     }
   }
 
+  getMaxLineBreaks(zone: DropZone): number {
+    const student = this.certificados[0];
+    if (!student) return 0;
+  
+    const originalValue = this.getOriginalValue(zone.fieldKey, student);
+    const parts = [
+      zone.customPrefix?.trim(),
+      originalValue?.trim(),
+      zone.customSuffix?.trim()
+    ].filter(part => part && part.length > 0);
+  
+    const content = parts.join(' ');
+    const words = content.split(/\s+/).filter(word => word.length > 0);
+    
+    return Math.max(0, words.length - 1);
+  }
+
   getStudentDataForZone(fieldKey: string): string {
     const student = this.certificados[0];
     if (!student) return '';
@@ -610,16 +650,33 @@ private createFallbackTemplates(): CertTemplate[] {
     const zone = this.currentPageState.dropZones.find(z => z.fieldKey === fieldKey);
     const originalValue = this.getOriginalValue(fieldKey, student);
     
-    // Combinar prefijo + valor original + sufijo, filtrando valores vacíos
+    // Construir el contenido base
     const parts = [
-        zone?.customPrefix?.trim(),
-        originalValue?.trim(),
-        zone?.customSuffix?.trim()
+      zone?.customPrefix?.trim(),
+      originalValue?.trim(),
+      zone?.customSuffix?.trim()
     ].filter(part => part && part.length > 0);
+  
+    const content = parts.join(' ');
+    const words = content.split(/\s+/).filter(word => word.length > 0);
     
-    return parts.join(' ');
-}
-
+    // Calcular saltos máximos posibles
+    const maxPossibleBreaks = Math.max(0, words.length - 1);
+    const desiredBreaks = Math.min(zone?.lineBreaks || 0, maxPossibleBreaks);
+    
+    // Dividir en líneas
+    const lines: string[] = [];
+    if (words.length > 0) {
+      const wordsPerLine = Math.ceil(words.length / (desiredBreaks + 1));
+      for (let i = 0; i <= desiredBreaks; i++) {
+        const start = i * wordsPerLine;
+        const end = start + wordsPerLine;
+        lines.push(words.slice(start, end).join(' '));
+      }
+    }
+    
+    return lines.join('\n');
+  }
 // En CertificationModuleComponent
 toggleItalic(zoneId: number): void {
   const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);
@@ -748,24 +805,30 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
       const rect = this.certificateRef.nativeElement.getBoundingClientRect();
       const scale = this.zoomLevel;
       
-      // Cálculo preciso considerando desplazamiento
-      const newX = ((event.clientX - rect.left - this.dragOffsetX) / scale);
-      const newY = ((event.clientY - rect.top - this.dragOffsetY) / scale);
-  
+      // Calculate position considering zoom level
+      const newX = (event.clientX - rect.left) / scale - this.dragOffsetX;
+      const newY = (event.clientY - rect.top) / scale - this.dragOffsetY;
+      
       this.handleDropZoneMove(
         this.draggingZone.id,
         Math.max(0, newX),
         Math.max(0, newY)
-      );
+      )
+      
+      this.cdr.detectChanges();
     }
   }
-  
 
   @HostListener('document:mouseup')
   onMouseUp(): void {
-    this.draggingZone = null;
-    document.body.style.cursor = 'default';
+    if (this.draggingZone) {
+      this.draggingZone = null;
+      document.body.style.cursor = 'default';
+    }
+    
+
   }
+  
 
   handleDropZoneMove(id: number, x: number, y: number): void {
     this.currentPageState.dropZones = this.currentPageState.dropZones.map(zone => {

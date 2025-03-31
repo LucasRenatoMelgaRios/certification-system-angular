@@ -190,6 +190,26 @@
 
                 <div class="style-row">
                   <div class="style-group">
+                    <label>Saltos de línea:</label>
+                    <div class="line-break-controls">
+                      <button class="break-button" 
+                              (click)="removeLineBreak(zone.id); $event.stopPropagation()"
+                              [disabled]="!zone.lineBreaks || zone.lineBreaks <= 0">
+                        -
+                      </button>
+                      <span>{{ zone.lineBreaks || 0 }}</span>
+
+                      <button class="break-button" 
+                      (click)="addLineBreak(zone.id); $event.stopPropagation()"
+                      [disabled]="zone.lineBreaks >= getMaxLineBreaks(zone)">
+                +
+              </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="style-row">
+                  <div class="style-group">
                     <label>Tamaño:</label>
                     <input
                       type="number"
@@ -244,17 +264,17 @@
             ></div>
 
             <div
-              *ngFor="let zone of currentPageState.dropZones"
-              class="drop-zone"
-              [class.selected]="currentPageState.selectedElement?.id === zone.id"
-              [class.hidden]="zone.hidden"
-              [style.left.px]="zone.position.x"
-              [style.top.px]="zone.position.y"
-              [style.color]="zone.textColor"
-              [style.fontFamily]="zone.fontFamily"
-              (mousedown)="startDraggingZone($event, zone)"
-              (click)="handleSelectElement('dropZone', zone.id)"
-            >
+            *ngFor="let zone of currentPageState.dropZones"
+            class="drop-zone"
+            [class.selected]="currentPageState.selectedElement?.id === zone.id"
+            [class.hidden]="zone.hidden"
+            [style.left.px]="zone.position.x"
+            [style.top.px]="zone.position.y"
+            [style.color]="zone.textColor"
+            [style.fontFamily]="zone.fontFamily"
+            (mousedown)="startDraggingZone($event, zone)"
+            (click)="handleSelectElement('dropZone', zone.id)"
+          >
               <div class="zone-content" 
                    [style.font-style]="zone.isItalic ? 'italic' : 'normal'"
                    [style.font-size.px]="zone.fontSize"
@@ -270,6 +290,7 @@
                   {{ getStudentDataForZone(zone.fieldKey) }}
                 </ng-template>
               </div>
+
 
               <div class="drop-zone-controls">
                 <button

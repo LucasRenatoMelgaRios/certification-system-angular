@@ -325,7 +325,18 @@ body {
   transition: all 0.2s ease;
   font-family: inherit;
   color: inherit;
+  resize: both;
+  word-wrap: break-word;
 }
+
+.drop-zone .zone-content {
+  width: 100%;
+  height: 100%;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow: hidden;
+}
+
 
 .drop-zone.selected {
   border-color: #4285f4;
@@ -338,7 +349,8 @@ body {
 }
 
 .zone-content {
-  white-space: nowrap;
+  white-space: pre-line; /* Mostrar saltos de línea */
+  word-break: break-word; /* Romper palabras largas */
   font: inherit;
 }
 
@@ -542,4 +554,22 @@ h3 {
   border-color: #4285f4;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.line-break-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.break-button {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #f8f9fa;
+  cursor: pointer;
+}
+
+.break-button:hover {
+  background: #e9ecef;
 }

@@ -93,7 +93,7 @@ export interface DropZone {
   customSuffix?: string;
   isItalic?: boolean; // Nueva propiedad
   fontSize: number; // Nueva propiedad
-
+  lineBreaks: number;
 
 }
 
@@ -145,46 +145,46 @@ export const AVAILABLE_FONTS = [
   'Arial'
 ];
 
-export const CERTIFICATE_LAYOUTS: { [key: string]: PageLayout } = {
-  curso: {
-    front: [
-      { id: 1, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 3, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 4, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 5, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
-    ],
-    back: [
-      { id: 6, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 7, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 8, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 9, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 10, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
-    ]
-  },
-  diplomado: {
-    front: [
-      { id: 11, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 12, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 13, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 14, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 15, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
-    ],
-    back: [
-      { id: 16, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 17, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 18, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 19, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 20, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
-    ]
-  },
-  constancia: {
-    front: [
-      { id: 21, fieldKey: 'descripcion', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 22, fieldKey: 'descripcion2', position: { x: 50, y: 220 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 23, fieldKey: 'nota', position: { x: 50, y: 290 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
-      { id: 24, fieldKey: 'emisionFormat', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
-    ],
-    back: []
-  }
-};
+// export const CERTIFICATE_LAYOUTS: { [key: string]: PageLayout } = {
+//   curso: {
+//     front: [
+//       { id: 1, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 3, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 4, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 5, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
+//     ],
+//     back: [
+//       { id: 6, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 7, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 8, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 9, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 10, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
+//     ]
+//   },
+//   diplomado: {
+//     front: [
+//       { id: 11, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 12, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 13, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 14, fieldKey: 'ihrlectiva', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 15, fieldKey: 'emisionFormat', position: { x: 50, y: 430 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
+//     ],
+//     back: [
+//       { id: 16, fieldKey: 'fechaFormat', position: { x: 50, y: 150 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 17, fieldKey: 'nombre', position: { x: 50, y: 220 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 18, fieldKey: 'dni', position: { x: 50, y: 290 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 19, fieldKey: 'codigo', position: { x: 50, y: 360 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 20, fieldKey: 'iIdCertificado', position: { x: 50, y: 430 }, pageId: 'back', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
+//     ]
+//   },
+//   constancia: {
+//     front: [
+//       { id: 21, fieldKey: 'descripcion', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 22, fieldKey: 'descripcion2', position: { x: 50, y: 220 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 23, fieldKey: 'nota', position: { x: 50, y: 290 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 },
+//       { id: 24, fieldKey: 'emisionFormat', position: { x: 50, y: 360 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52 }
+//     ],
+//     back: []
+//   }
+// };
