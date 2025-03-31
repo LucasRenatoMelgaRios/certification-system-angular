@@ -293,6 +293,8 @@ body {
   align-items: center;
   min-height: min-content;
   padding: 20px;
+  transform-origin: 0 0; 
+
 }
 
 .certificate-content {

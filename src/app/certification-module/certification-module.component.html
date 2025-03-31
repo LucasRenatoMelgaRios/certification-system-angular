@@ -247,8 +247,9 @@
     <div class="preview-panel">
       <div class="certificate-preview" #certificateContainerRef>
         <div class="certificate-container" 
-             (dragover)="onDragOver($event)"
-             (drop)="onDrop($event)">
+        #certificateContainerRef
+        (dragover)="onDragOver($event)"
+        (drop)="onDrop($event)">
           <div
             class="certificate-content"
             [style.transform]="'scale(' + zoomLevel + ')'"

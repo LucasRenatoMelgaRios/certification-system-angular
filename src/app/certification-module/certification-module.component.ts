@@ -22,7 +22,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
 
   currentPageId: 'front' | 'back' = 'front';
   currentTemplateHasSignature = false;
-  zoomLevel = 1;
+  zoomLevel = 0.3;
   certTemplates: CertTemplate[] = [];
   selectedCert: CertTemplate | null = null;
   certSize: CertSize = { width: 1123, height: 794 };
@@ -167,13 +167,16 @@ private mergeZones(savedZones: any[]): DropZone[] {
       return;
     }
   
-    const rect = container.getBoundingClientRect();
+    // Obtener dimensiones del contenedor con zoom
+    const rect = this.certificateContainerRef.nativeElement.getBoundingClientRect();
     const scale = this.zoomLevel;
+    
+    // Calcular posición relativa al contenedor principal (no al certificado escalado)
     const x = (event.clientX - rect.left) / scale;
     const y = (event.clientY - rect.top) / scale;
   
     const newZone: DropZone = {
-      id: this.generateUniqueId(), 
+      id: this.generateUniqueId(),
       fieldKey: this.draggedField.key,
       position: { x, y },
       pageId: this.currentPageId,
@@ -182,7 +185,9 @@ private mergeZones(savedZones: any[]): DropZone[] {
       fontFamily: 'Arial',
       fontSize: 52,
       isItalic: false,
-      lineBreaks: 0 // Inicializado en 0
+      lineBreaks: 0,
+      customPrefix: '',
+      customSuffix: ''
     };
   
     currentPage.dropZones.push(newZone);
