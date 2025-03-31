@@ -156,7 +156,7 @@ export const CERTIFICATE_LAYOUTS: { [key: string]: PageLayout } = {
     front: [
       { id: 1, fieldKey: 'nombre', position: { x: 50, y: 150 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52,lineBreaks: 2
     },
-      { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52, lineBreaks: 4
+      { id: 2, fieldKey: 'curso', position: { x: 50, y: 220 }, pageId: 'front', type: 'text', textColor: 'black', fontFamily: 'Arial', fontSize: 52, lineBreaks: 2
     },
       {
         id: 3, fieldKey: 'descripcion', position: { x: 50, y: 290 }, pageId: 'front', type: 'dates', textColor: 'black', fontFamily: 'Arial', fontSize: 52,

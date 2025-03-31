@@ -119,6 +119,8 @@ private initializePageStates(): void {
     }
   };
 }
+
+
   
 private mergeZones(savedZones: any[]): DropZone[] {
   return savedZones.map(zone => ({
@@ -1042,6 +1044,21 @@ hasTemplateType(code: 'CNF' | 'SNF' | 'REV'): boolean {
 
   handleZoomOut(): void {
     this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.1); // 10% mínimo
+    this.cdr.detectChanges();
+  }
+
+  deleteField(zoneId: number): void {
+    // Eliminar de todas las páginas y tipos de certificado
+    Object.keys(this.pageStates).forEach(pageId => {
+      this.pageStates[pageId as 'front' | 'back'].dropZones = 
+        this.pageStates[pageId as 'front' | 'back'].dropZones.filter(z => z.id !== zoneId);
+    });
+  
+    // Deseleccionar elemento si era el seleccionado
+    if (this.currentPageState.selectedElement?.id === zoneId) {
+      this.currentPageState.selectedElement = null;
+    }
+  
     this.cdr.detectChanges();
   }
 

@@ -125,12 +125,12 @@
               <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
               <div class="field-controls">
                 <button
-                  class="control-btn"
-                  (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                  [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
-                >
-                  <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-                </button>
+                class="control-btn delete-btn"
+                (click)="deleteField(zone.id); $event.stopPropagation()"
+                title="Eliminar campo"
+              >
+                <i class="icon-delete">✖</i>
+              </button>
               </div>
             </div>
 
