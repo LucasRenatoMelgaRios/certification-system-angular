@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { CertTemplate, Certificado } from '../models/certificate.model';
+import { CertTemplate, Certificado, ConfigApiResponse, CERTIFICATE_LAYOUTS } from '../models/certificate.model';
+import { switchMap } from 'rxjs/operators'; // Añadir este import
 
 @Injectable({
   providedIn: 'root'
@@ -10,36 +11,56 @@ import { CertTemplate, Certificado } from '../models/certificate.model';
 export class CertificateService {
   private apiTemplatesUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/certificados'; // Actualiza con tu endpoint real
   private apiStudentsUrl = 'https://67e2eb6f97fc65f5353824c6.mockapi.io/estudiante'; // Actualiza con tu endpoint real
-  private apiConfigUrl = 'https://67e8c749bdcaa2b7f5b7caf8.mockapi.io/config-templates/1';
+  private apiConfigUrl = 'https://67e8c749bdcaa2b7f5b7caf8.mockapi.io/config-templates';
 
   constructor(private http: HttpClient) { }
 
+saveGlobalConfig(configToAdd: any): Observable<any> {
+  const configId = "1";
+  
+  return this.http.get<any>(`${this.apiConfigUrl}/${configId}`).pipe(
+    switchMap(existingResponse => { // Usando switchMap correctamente
+      const existingConfig = existingResponse.configTemplate 
+        ? JSON.parse(existingResponse.configTemplate) 
+        : {};
 
-  saveGlobalConfig(config: any): Observable<any> {
-    try {
-      const configString = JSON.stringify(config);
-      return this.http.put(this.apiConfigUrl, {
-        configTemplate: configString,
+      const mergedConfig = {
+        ...existingConfig,
+        ...configToAdd
+      };
+
+      return this.http.put(`${this.apiConfigUrl}/${configId}`, {
+        id: configId,
+        configTemplate: JSON.stringify(mergedConfig),
         updatedAt: new Date().toISOString()
       });
-    } catch (error) {
-      return throwError(() => new Error('JSON inválido'));
-    }
-  }
+    }),
+    catchError(err => {
+      return this.http.post(this.apiConfigUrl, {
+        id: configId,
+        configTemplate: JSON.stringify(configToAdd),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    })
+  );
+}
 
-  getGlobalConfig(): Observable<any> {
-    return this.http.get(this.apiConfigUrl).pipe(
-      map((response: any) => {
-        try {
-          return response.configTemplate ? JSON.parse(response.configTemplate) : {};
-        } catch {
-          return {};
-        }
-      }),
-      catchError(() => of({})) // Devuelve objeto vacío si hay error
-    );
-  }
-
+getGlobalConfig(): Observable<any> {
+  const configId = "1";
+  return this.http.get<any>(`${this.apiConfigUrl}/${configId}`).pipe(
+    map(response => {
+      try {
+        return response.configTemplate 
+          ? JSON.parse(response.configTemplate) 
+          : {};
+      } catch {
+        return {};
+      }
+    }),
+    catchError(() => of({})) // Devuelve objeto vacío si hay error
+  );
+}
   /**
    * Obtiene todas las plantillas de certificados y las adapta al modelo interno
    */

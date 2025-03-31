@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { CertificateService } from '../services/certificate.service';
 
-import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, AVAILABLE_FONTS 
+import { CertTemplate, Certificado, DropZone, PageState, PageStates, CertSize, AVAILABLE_FONTS, CERTIFICATE_LAYOUTS 
 } from '../models/certificate.model';
 
 @Component({
@@ -87,57 +87,57 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private loadGlobalConfig(): void {
-    this.certificateService.getGlobalConfig().subscribe({
-      next: (config) => {
-        this.globalConfig = config;
-        this.initializePageStates();
-      },
-      error: (err) => console.error('Error loading global config:', err)
-    });
-  }
-
+// En certification-module.component.ts
+private loadGlobalConfig(): void {
+  this.certificateService.getGlobalConfig().subscribe({
+    next: (fullConfig) => {
+      this.globalConfig = fullConfig;
+      this.initializePageStates();
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      this.globalConfig = {};
+      this.initializePageStates();
+    }
+  });
+}
   
-  private initializePageStates(): void {
-    const globalConfig = this.globalConfig[this.certificateType] || {};
-    
-    this.pageStates = {
-      front: {
-        dropZones: this.mergeZones(globalConfig.front?.dropZones || [], []),
-        droppedItems: {},
-        selectedElement: null
-      },
-      back: {
-        dropZones: this.mergeZones(globalConfig.back?.dropZones || [], []),
-        droppedItems: {},
-        selectedElement: null
-      }
-    };
-  }
-  
-  private mergeZones(savedZones: any[], defaultZones: any[]): DropZone[] {
-    return savedZones.map(savedZone => {
-      // Asegurar que cada zona tenga su pageId correcto
-      const pageId = savedZone.pageId || this.currentPageId;
-      
-      return {
-        id: savedZone.id || Date.now() + Math.random(),
-        fieldKey: savedZone.fieldKey,
-        position: savedZone.position || { x: 0, y: 0 },
-        pageId: pageId,
-        type: savedZone.type || 'text',
-        hidden: savedZone.hidden ?? false,
-        textColor: savedZone.textColor || 'black',
-        fontFamily: savedZone.fontFamily || 'Arial',
-        fontSize: savedZone.fontSize || 52,
-        isItalic: savedZone.isItalic || false,
-        customPrefix: savedZone.customPrefix || '',
-        customSuffix: savedZone.customSuffix || '',
-        lineBreaks: savedZone.lineBreaks || 0 // Inicializado para ambas páginas
-      };
-    });
-  }
+// En certification-module.component.ts
+private initializePageStates(): void {
+  const savedConfig = this.globalConfig[this.certificateType] || {};
 
+  this.pageStates = {
+    front: {
+      dropZones: this.mergeZones(savedConfig.front || []),
+      droppedItems: {},
+      selectedElement: null
+    },
+    back: {
+      dropZones: this.mergeZones(savedConfig.back || []),
+      droppedItems: {},
+      selectedElement: null
+    }
+  };
+}
+  
+private mergeZones(savedZones: any[]): DropZone[] {
+  return savedZones.map(zone => ({
+    id: zone.id, // Mantener el mismo ID
+    fieldKey: zone.fieldKey,
+    position: zone.position || { x: 0, y: 0 }, // Posición crítica
+    pageId: zone.pageId || this.currentPageId,
+    type: zone.type || 'text',
+    hidden: zone.hidden ?? false,
+    textColor: zone.textColor || 'black',
+    fontFamily: zone.fontFamily || 'Arial',
+    fontSize: zone.fontSize || 52,
+    isItalic: zone.isItalic || false,
+    customPrefix: zone.customPrefix || '',
+    customSuffix: zone.customSuffix || '',
+    lineBreaks: zone.lineBreaks || 0
+  }));
+}
+  
   trackByZoneId(index: number, zone: DropZone): number {
     return zone.id; // Usar el ID único para tracking
   }
@@ -171,7 +171,7 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     const y = (event.clientY - rect.top) / scale;
   
     const newZone: DropZone = {
-      id: Date.now(),
+      id: this.generateUniqueId(), 
       fieldKey: this.draggedField.key,
       position: { x, y },
       pageId: this.currentPageId,
@@ -185,6 +185,10 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
   
     currentPage.dropZones.push(newZone);
     this.cdr.detectChanges();
+  }
+
+  private generateUniqueId(): number {
+    return Date.now() + Math.floor(Math.random() * 1000);
   }
 
   addLineBreak(zoneId: number): void {
@@ -238,30 +242,19 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     }
   }
 
-  
-  private loadSavedConfiguration(): PageStates | null {
-    try {
-      const savedConfig = localStorage.getItem('certificate-config');
-      if (savedConfig) {
-        const allConfigs: Record<string, PageStates> = JSON.parse(savedConfig);
-        return allConfigs[this.certificateType] || null;
-      }
-    } catch (error) {
-      console.error('Error cargando configuración:', error);
-    }
-    return null;
-  }
 
   saveConfiguration(): void {
     this.certificateService.getGlobalConfig().subscribe(existingConfig => {
+      // Combinar configuraciones
       const configToSave = {
-        ...existingConfig, // Mantenemos configs existentes
+        ...existingConfig,
         [this.certificateType]: {
           front: this.getSanitizedConfig('front'),
           back: this.getSanitizedConfig('back')
         }
       };
   
+      // Guardar configuración completa
       this.certificateService.saveGlobalConfig(configToSave).subscribe({
         next: () => this.showNotification('Configuración guardada', 'success'),
         error: (err) => this.showNotification('Error al guardar', 'error')
@@ -269,22 +262,23 @@ export class CertificationModuleComponent implements OnInit, AfterViewInit {
     });
   }
   
-  private getSanitizedConfig(pageId: 'front' | 'back'): any {
+  private getSanitizedConfig(pageId: 'front' | 'back'): any[] {
     return this.pageStates[pageId].dropZones.map(zone => ({
+      id: zone.id, // Necesario para identificar elementos únicos
+      pageId: zone.pageId, // Asegura la página correcta
       fieldKey: zone.fieldKey,
-      position: zone.position,
+      position: zone.position, // {x, y} son críticos
       type: zone.type,
-      hidden: zone.hidden,
+      hidden: zone.hidden ?? false,
       textColor: zone.textColor,
       fontFamily: zone.fontFamily,
       isItalic: zone.isItalic,
       fontSize: zone.fontSize,
+      lineBreaks: zone.lineBreaks, // Campo añadido
       customPrefix: zone.customPrefix,
       customSuffix: zone.customSuffix
     }));
   }
-
-
   private sanitizeZone(zone: DropZone): any {
     return {
       fieldKey: zone.fieldKey,
