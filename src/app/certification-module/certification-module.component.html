@@ -110,129 +110,111 @@
         </div>
       </div>
 
-      <div class="fields-panel">
-        <div class="available-fields">
-          <h3>Campos Disponibles</h3>
-          <div class="fields-container">
-            <div *ngFor="let field of availableFields" 
-                class="field-item draggable"
-                [attr.data-field-key]="field.key"
-                draggable="true"
-                (dragstart)="onDragStart($event, field)"
-                (dragend)="onDragEnd($event)">
-              <div class="field-header">
-                <span class="field-name">{{ getFieldLabel(field.key) }}</span>
+      <div class="fields-list">
+        <h3>Campos en Uso</h3>
+        <div class="fields-list-container" #fieldsListContainer>
+          <div
+            *ngFor="let zone of currentPageState.dropZones; trackBy: trackByZoneId"
+            class="field-item"
+            [id]="'field-item-' + zone.id"
+            [class.hidden]="zone.hidden"
+            [class.selected]="currentPageState.selectedElement?.id === zone.id"
+            (click)="handleSelectElement('dropZone', zone.id)"
+          >
+            <div class="field-header">
+              <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
+              <div class="field-controls">
+                <button
+                  class="control-btn"
+                  (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
+                  [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
+                >
+                  <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
+                </button>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div class="fields-list">
-          <h3>Campos en Uso</h3>
-          <div class="fields-list-container" #fieldsListContainer>
-            <div
-            *ngFor="let zone of currentPageState.dropZones; trackBy: trackByZoneId"
-              class="field-item"
-              [id]="'field-item-' + zone.id"
-              [class.hidden]="zone.hidden"
-              [class.selected]="currentPageState.selectedElement?.id === zone.id"
-              (click)="handleSelectElement('dropZone', zone.id)"
-            >
-              <div class="field-header">
-                <span class="field-name">{{ getFieldLabel(zone.fieldKey) }}</span>
-                <div class="field-controls">
-                  <button
-                    class="control-btn"
-                    (click)="toggleZoneVisibility(zone.id); $event.stopPropagation()"
-                    [title]="zone.hidden ? 'Mostrar campo' : 'Ocultar campo'"
-                  >
-                    <i [class]="zone.hidden ? 'icon-eye-closed' : 'icon-eye'"></i>
-                  </button>
-                </div>
+            <div class="field-content">
+              <div class="style-group">
+                <label>Texto adicional:</label>
+                <input
+                  type="text"
+                  class="content-edit"
+                  [(ngModel)]="zone.customPrefix"
+                  (ngModelChange)="onContentChange(zone.id)"
+                  (click)="$event.stopPropagation()"
+                  placeholder="Prefijo (ej: Estimado)"
+                >
               </div>
 
-              <div class="field-content">
-                <div class="style-group">
-                  <label>Texto adicional:</label>
-                  <input
-                    type="text"
-                    class="content-edit"
-                    [(ngModel)]="zone.customPrefix"
-                    (ngModelChange)="onContentChange(zone.id)"
-                    (click)="$event.stopPropagation()"
-                    placeholder="Prefijo (ej: Estimado)"
-                  >
+              <div class="style-group">
+                <label>Texto posterior:</label>
+                <input
+                  type="text"
+                  class="content-edit"
+                  [(ngModel)]="zone.customSuffix"
+                  (ngModelChange)="onContentChange(zone.id)"
+                  (click)="$event.stopPropagation()"
+                  placeholder="Sufijo (ej: Saludos)"
+                >
+              </div>
+
+              <div class="field-styling">
+                <div class="style-row">
+                  <div class="style-group">
+                    <label>Color:</label>
+                    <button
+                      class="color-btn"
+                      [class.active]="zone.textColor === 'black'"
+                      (click)="toggleTextColor(zone.id); $event.stopPropagation()"
+                    >
+                      <span
+                        class="color-preview"
+                        [style.background]="zone.textColor"
+                      ></span>
+                      {{ zone.textColor === "black" ? "Negro" : "Blanco" }}
+                    </button>
+                  </div>
+                  
+                  <div class="style-group">
+                    <label>Cursiva:</label>
+                    <button
+                      class="color-btn"
+                      [class.active]="zone.isItalic"
+                      (click)="toggleItalic(zone.id); $event.stopPropagation()"
+                    >
+                      <i class="icon-italic">I</i>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="style-group">
-                  <label>Texto posterior:</label>
-                  <input
-                    type="text"
-                    class="content-edit"
-                    [(ngModel)]="zone.customSuffix"
-                    (ngModelChange)="onContentChange(zone.id)"
-                    (click)="$event.stopPropagation()"
-                    placeholder="Sufijo (ej: Saludos)"
-                  >
-                </div>
-
-                <div class="field-styling">
-                  <div class="style-row">
-                    <div class="style-group">
-                      <label>Color:</label>
-                      <button
-                        class="color-btn"
-                        [class.active]="zone.textColor === 'black'"
-                        (click)="toggleTextColor(zone.id); $event.stopPropagation()"
-                      >
-                        <span
-                          class="color-preview"
-                          [style.background]="zone.textColor"
-                        ></span>
-                        {{ zone.textColor === "black" ? "Negro" : "Blanco" }}
-                      </button>
-                    </div>
-                    
-                    <div class="style-group">
-                      <label>Cursiva:</label>
-                      <button
-                        class="color-btn"
-                        [class.active]="zone.isItalic"
-                        (click)="toggleItalic(zone.id); $event.stopPropagation()"
-                      >
-                        <i class="icon-italic">I</i>
-                      </button>
-                    </div>
+                <div class="style-row">
+                  <div class="style-group">
+                    <label>Tamaño:</label>
+                    <input
+                      type="number"
+                      class="content-edit size-input"
+                      [(ngModel)]="zone.fontSize"
+                      (ngModelChange)="onContentChange(zone.id)"
+                      (click)="$event.stopPropagation()"
+                      min="8"
+                      max="120"
+                      step="1"
+                    >
                   </div>
 
-                  <div class="style-row">
-                    <div class="style-group">
-                      <label>Tamaño:</label>
-                      <input
-                        type="number"
-                        class="content-edit size-input"
-                        [(ngModel)]="zone.fontSize"
-                        (ngModelChange)="onContentChange(zone.id)"
-                        (click)="$event.stopPropagation()"
-                        min="8"
-                        max="120"
-                        step="1"
-                      >
-                    </div>
-
-                    <div class="style-group">
-                      <label>Fuente:</label>
-                      <select
-                        class="font-select"
-                        [(ngModel)]="zone.fontFamily"
-                        (ngModelChange)="onFontChange(zone.id, $event)"
-                        (click)="$event.stopPropagation()"
-                      >
-                        <option *ngFor="let font of availableFonts" [value]="font">
-                          {{ font }}
-                        </option>
-                      </select>
-                    </div>
+                  <div class="style-group">
+                    <label>Fuente:</label>
+                    <select
+                      class="font-select"
+                      [(ngModel)]="zone.fontFamily"
+                      (ngModelChange)="onFontChange(zone.id, $event)"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <option *ngFor="let font of availableFonts" [value]="font">
+                        {{ font }}
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -273,11 +255,11 @@
               (mousedown)="startDraggingZone($event, zone)"
               (click)="handleSelectElement('dropZone', zone.id)"
             >
-            <div class="zone-content" 
-            [style.font-style]="zone.isItalic ? 'italic' : 'normal'"
-            [style.font-size.px]="zone.fontSize"
-            [style.color]="zone.textColor"
-            [style.font-family]="zone.fontFamily">
+              <div class="zone-content" 
+                   [style.font-style]="zone.isItalic ? 'italic' : 'normal'"
+                   [style.font-size.px]="zone.fontSize"
+                   [style.color]="zone.textColor"
+                   [style.font-family]="zone.fontFamily">
                 <ng-container *ngIf="zone.type === 'dates'; else textField">
                   <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')">
                     {{ line }}
@@ -305,4 +287,21 @@
     </div>
   </div>
 
+  <div class="available-fields-footer">
+    <h3>Campos Disponibles</h3>
+    <div class="fields-container">
+      <div
+        *ngFor="let field of availableFields"
+        class="field-item draggable"
+        [attr.data-field-key]="field.key"
+        draggable="true"
+        (dragstart)="onDragStart($event, field)"
+        (dragend)="onDragEnd($event)"
+      >
+        <div class="field-header">
+          <span class="field-name">{{ getFieldLabel(field.key) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

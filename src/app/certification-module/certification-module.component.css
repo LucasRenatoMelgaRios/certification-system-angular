@@ -1,7 +1,7 @@
 @import url('https://fonts.cdnfonts.com/css/paddingtonsc');
 
- /* Base styles */
- * {
+/* Base styles */
+* {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -81,7 +81,7 @@ body {
 }
 
 .sidebar {
-  width: 40%;
+  width: 20%; /* Reduced from 40% to 20% */
   display: flex;
   flex-direction: column;
   border-right: 1px solid #e9ecef;
@@ -126,7 +126,7 @@ body {
 .fields-panel {
   flex: 1;
   display: flex;
-  flex-direction: row; /* Cambiar a disposición horizontal */
+  flex-direction: row;
   gap: 15px;
   overflow: hidden;
   min-width: 600px;
@@ -150,7 +150,7 @@ body {
 .fields-list {
   flex: 1;
   min-width: 45%;
-  overflow-y: auto; /* Habilitar scroll vertical */
+  overflow-y: auto;
   background: white;
   border-radius: 4px;
   padding: 15px;
@@ -160,7 +160,7 @@ body {
 
 .fields-container {
   display: grid;
-  grid-template-columns: repeat(1, 1fr); /* Una columna para campos arrastrables */
+  grid-template-columns: repeat(1, 1fr);
   gap: 10px;
   margin-top: 10px;
 }
@@ -275,23 +275,29 @@ body {
   flex: 1;
   overflow: hidden;
   background-color: #fff;
-  width: 50%;
+  width: 80%; /* Increased from 50% to 80% */
 }
 
 .certificate-preview {
   height: 100%;
   overflow: auto;
   padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .certificate-container {
   display: flex;
   justify-content: center;
-  min-height: 100%;
+  align-items: center;
+  min-height: min-content;
+  padding: 20px;
 }
 
 .certificate-content {
   position: relative;
+  transform-origin: center;
   background: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
@@ -317,8 +323,8 @@ body {
   min-height: 40px;
   cursor: move;
   transition: all 0.2s ease;
-  font-family: inherit; /* Heredar fuente del contenedor */
-  color: inherit; /* Heredar color del texto */
+  font-family: inherit;
+  color: inherit;
 }
 
 .drop-zone.selected {
@@ -332,9 +338,8 @@ body {
 }
 
 .zone-content {
-  white-space: nowrap; /* 🔹 Esto evita saltos de línea */
-
-  font: inherit; /* Asegurar herencia completa */
+  white-space: nowrap;
+  font: inherit;
 }
 
 .drop-zone-controls {
@@ -371,13 +376,11 @@ body {
   transform: scale(1.1);
 }
 
-/* Icono del ojo */
 .visibility-toggle::before {
-  content: '👁'; /* O puedes usar un ícono con FontAwesome: "\f06e"; */
+  content: '👁';
   font-size: 16px;
 }
 
-/* Pseudo-elemento para mostrar texto */
 .visibility-toggle::after {
   content: 'Mostrar';
   position: absolute;
@@ -399,9 +402,8 @@ body {
   opacity: 1;
 }
 
-/* Cuando el botón está activo (ej: está ocultando algo) */
 .visibility-toggle.active::before {
-  content: '🚫'; /* Icono de oculto */
+  content: '🚫';
 }
 
 .visibility-toggle.active::after {
@@ -478,4 +480,66 @@ h3 {
 
 .field-item {
   transition: all 0.3s ease;
+}
+
+/* Available fields footer */
+.available-fields-footer {
+  background-color: #fff;
+  border-top: 1px solid #e9ecef;
+  padding: 15px;
+  height: 130px; /* Fixed height */
+  min-height: unset; /* Remove min-height */
+}
+
+.available-fields-footer h3 {
+  color: #34495e;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.available-fields-footer .fields-container {
+  display: flex;
+  gap: 15px;
+  padding: 10px;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: hidden; /* Disable vertical scrolling */
+  white-space: nowrap; /* Prevent wrapping */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #4285f4 #f0f0f0; /* Firefox */
+  height: calc(100% - 35px); /* Account for header height */
+}
+
+/* Webkit scrollbar styling */
+.available-fields-footer .fields-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.available-fields-footer .fields-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.available-fields-footer .fields-container::-webkit-scrollbar-thumb {
+  background: #4285f4;
+  border-radius: 3px;
+}
+
+.available-fields-footer .field-item.draggable {
+  flex: 0 0 auto;
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  margin-bottom: 0;
+  white-space: normal; /* Allow text wrapping within items */
+}
+
+.available-fields-footer .field-item.draggable:hover {
+  border-color: #4285f4;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
