@@ -651,33 +651,50 @@ private createFallbackTemplates(): CertTemplate[] {
     const zone = this.currentPageState.dropZones.find(z => z.fieldKey === fieldKey);
     const originalValue = this.getOriginalValue(fieldKey, student);
     
-    // Construir el contenido base
+    // Construir el contenido base con prefijo y sufijo
     const parts = [
-      zone?.customPrefix?.trim(),
-      originalValue?.trim(),
-      zone?.customSuffix?.trim()
+        zone?.customPrefix?.trim(),
+        originalValue?.trim(),
+        zone?.customSuffix?.trim()
     ].filter(part => part && part.length > 0);
   
     const content = parts.join(' ');
-    const words = content.split(/\s+/).filter(word => word.length > 0);
+    
+    // Dividir en palabras considerando espacios y guiones
+    const words = content.split(/(\S+[\-']?\S*)/)
+                        .filter(word => word.trim().length > 0);
     
     // Calcular saltos máximos posibles
     const maxPossibleBreaks = Math.max(0, words.length - 1);
     const desiredBreaks = Math.min(zone?.lineBreaks || 0, maxPossibleBreaks);
     
-    // Dividir en líneas
+    // Si no hay saltos o solo una palabra, retornar todo en una línea
+    if (desiredBreaks <= 0 || words.length <= 1) {
+        return content;
+    }
+    
+    // Calcular palabras por línea
+    const wordsPerLine = Math.ceil(words.length / (desiredBreaks + 1));
     const lines: string[] = [];
-    if (words.length > 0) {
-      const wordsPerLine = Math.ceil(words.length / (desiredBreaks + 1));
-      for (let i = 0; i <= desiredBreaks; i++) {
+    
+    // Construir líneas manteniendo palabras completas
+    for (let i = 0; i <= desiredBreaks; i++) {
         const start = i * wordsPerLine;
-        const end = start + wordsPerLine;
-        lines.push(words.slice(start, end).join(' '));
-      }
+        const end = Math.min(start + wordsPerLine, words.length);
+        const line = words.slice(start, end).join(' ').trim();
+        
+        if (line) {
+            lines.push(line);
+        }
+    }
+    
+    // Manejar caso cuando wordsPerLine es 0 (no debería ocurrir)
+    if (lines.length === 0) {
+        return content;
     }
     
     return lines.join('\n');
-  }
+}
 // En CertificationModuleComponent
 toggleItalic(zoneId: number): void {
   const zone = this.currentPageState.dropZones.find(z => z.id === zoneId);

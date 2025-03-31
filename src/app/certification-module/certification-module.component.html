@@ -288,7 +288,13 @@
                 </ng-container>
 
                 <ng-template #textField>
-                  {{ getStudentDataForZone(zone.fieldKey) }}
+                  <div class="text-content" 
+                       [style.white-space]="zone.lineBreaks > 0 ? 'pre-wrap' : 'nowrap'">
+                    <div *ngFor="let line of getStudentDataForZone(zone.fieldKey).split('\n')" 
+                         class="text-line">
+                      {{ line }}
+                    </div>
+                  </div>
                 </ng-template>
               </div>
 
